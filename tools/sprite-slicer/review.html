@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sprite Slicer — Review</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #16161a; color: #e6e6e9; display: flex; height: 100vh; }
+  #canvasWrap { flex: 1; overflow: auto; background: repeating-conic-gradient(#222 0% 25%, #2a2a2a 0% 50%) 0 0/20px 20px; }
+  canvas { display: block; cursor: crosshair; }
+  #sidebar { width: 320px; flex-shrink: 0; background: #1e1e24; border-left: 1px solid #333; padding: 12px; overflow-y: auto; box-sizing: border-box; }
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .05em; color: #9a9aa2; margin: 18px 0 6px; }
+  h2:first-child { margin-top: 0; }
+  select, input, button { width: 100%; box-sizing: border-box; background: #2a2a32; color: #e6e6e9; border: 1px solid #3d3d47; border-radius: 4px; padding: 6px; margin-bottom: 6px; font-size: 13px; }
+  button { cursor: pointer; }
+  button.primary { background: #4c6ef5; border-color: #4c6ef5; font-weight: 600; }
+  button.danger { background: #5c2b2b; border-color: #7a3a3a; }
+  .row { display: flex; gap: 6px; }
+  .row > * { flex: 1; }
+  #list { max-height: 300px; overflow-y: auto; border: 1px solid #333; border-radius: 4px; }
+  .item { padding: 6px 8px; font-size: 12px; border-bottom: 1px solid #2a2a32; cursor: pointer; display: flex; justify-content: space-between; }
+  .item:hover { background: #2a2a32; }
+  .item.selected { background: #37374a; }
+  .item.flag { color: #ff8787; }
+  .badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; background: #333; }
+  #toast { position: fixed; bottom: 16px; left: 16px; background: #2f9e44; color: white; padding: 8px 14px; border-radius: 4px; font-size: 13px; display: none; }
+  .hint { font-size: 11px; color: #8a8a92; line-height: 1.4; }
+</style>
+</head>
+<body>
+  <div id="canvasWrap"><canvas id="canvas"></canvas></div>
+  <div id="sidebar">
+    <h2>Sheet</h2>
+    <select id="sheetSelect"></select>
+    <div class="row">
+      <button id="zoomOut">-</button>
+      <button id="zoomReset">100%</button>
+      <button id="zoomIn">+</button>
+    </div>
+
+    <h2>Selected asset</h2>
+    <div id="noSelection" class="hint">Click a box to select it. Drag its body to move, drag a corner handle to resize. Drag on empty canvas to draw a new box.</div>
+    <div id="editForm" style="display:none">
+      <input id="fFilename" disabled>
+      <select id="fCategory"></select>
+      <div class="row">
+        <input id="fX" type="number" placeholder="x">
+        <input id="fY" type="number" placeholder="y">
+      </div>
+      <div class="row">
+        <input id="fW" type="number" placeholder="width">
+        <input id="fH" type="number" placeholder="height">
+      </div>
+      <button id="deleteBtn" class="danger">Delete this box</button>
+    </div>
+
+    <h2>All assets on this sheet</h2>
+    <div id="list"></div>
+
+    <h2>&nbsp;</h2>
+    <button id="saveBtn" class="primary">Save &amp; re-export</button>
+    <p class="hint">Saving re-crops every box directly from the source sheet (so hand-adjustments use real pixels), rewrites metadata.json, the contact sheet, and game-assets.zip.</p>
+  </div>
+  <div id="toast"></div>
+
+<script>
+const CATEGORY_COLORS = {
+  player: '#4c6ef5', npc: '#12b886', enemies: '#f76707', bosses: '#e03131',
+  props: '#ae3ec9', ui: '#f59f00', uncertain: '#868e96'
+};
+const CATEGORIES = Object.keys(CATEGORY_COLORS);
+
+let entries = [];
+let sheets = [];
+let currentSheet = null;
+let img = new Image();
+let zoom = 1;
+let selected = null; // reference into entries
+let dragMode = null; // 'move' | 'resize-NW' etc | 'new'
+let dragStart = null;
+let dragOrigBox = null;
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+async function boot() {
+  sheets = await (await fetch('/sheets.json')).json();
+  entries = await (await fetch('/metadata.json')).json();
+  const sel = document.getElementById('sheetSelect');
+  sheets.forEach(name => {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', () => loadSheet(sel.value));
+  loadSheet(sheets[0]);
+
+  const catSel = document.getElementById('fCategory');
+  CATEGORIES.forEach(c => {
+    const o = document.createElement('option'); o.value = c; o.textContent = c;
+    catSel.appendChild(o);
+  });
+}
+
+function loadSheet(name) {
+  currentSheet = name;
+  img = new Image();
+  img.onload = () => { fitZoom(); render(); };
+  img.src = '/sheet/' + encodeURIComponent(name);
+  selected = null;
+  refreshSidebar();
+}
+
+function fitZoom() {
+  const maxW = window.innerWidth - 340;
+  zoom = Math.min(1, maxW / img.width) || 1;
+  document.getElementById('zoomReset').textContent = Math.round(zoom * 100) + '%';
+}
+
+function currentEntries() {
+  return entries.filter(e => e.source_sheet === currentSheet);
+}
+
+function render() {
+  canvas.width = img.width * zoom;
+  canvas.height = img.height * zoom;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  currentEntries().forEach(e => {
+    const color = CATEGORY_COLORS[e.category] || '#fff';
+    ctx.lineWidth = e === selected ? 3 : 1.5;
+    ctx.strokeStyle = color;
+    if (e.needs_review) ctx.setLineDash([5, 3]); else ctx.setLineDash([]);
+    ctx.strokeRect(e.x * zoom, e.y * zoom, e.width * zoom, e.height * zoom);
+    if (e === selected) {
+      ctx.fillStyle = color;
+      handlesOf(e).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
+    }
+  });
+  ctx.setLineDash([]);
+}
+
+function handlesOf(e) {
+  const x = e.x * zoom, y = e.y * zoom, w = e.width * zoom, h = e.height * zoom;
+  return [
+    { name: 'NW', x: x, y: y }, { name: 'NE', x: x + w, y: y },
+    { name: 'SW', x: x, y: y + h }, { name: 'SE', x: x + w, y: y + h },
+  ];
+}
+
+function hitHandle(mx, my) {
+  if (!selected) return null;
+  for (const h of handlesOf(selected)) {
+    if (Math.abs(mx - h.x) <= 6 && Math.abs(my - h.y) <= 6) return h.name;
+  }
+  return null;
+}
+
+function hitBox(mx, my) {
+  const list = currentEntries();
+  for (let i = list.length - 1; i >= 0; i--) {
+    const e = list[i];
+    const x = e.x * zoom, y = e.y * zoom, w = e.width * zoom, h = e.height * zoom;
+    if (mx >= x && mx <= x + w && my >= y && my <= y + h) return e;
+  }
+  return null;
+}
+
+canvas.addEventListener('mousedown', (ev) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
+  const handle = hitHandle(mx, my);
+  dragStart = { mx, my };
+  if (handle) {
+    dragMode = 'resize-' + handle;
+    dragOrigBox = { ...selected };
+  } else {
+    const hit = hitBox(mx, my);
+    if (hit) {
+      selected = hit;
+      dragMode = 'move';
+      dragOrigBox = { ...hit };
+      refreshSidebar();
+    } else {
+      selected = null;
+      dragMode = 'new';
+      dragOrigBox = { x: mx / zoom, y: my / zoom, width: 0, height: 0 };
+      refreshSidebar();
+    }
+  }
+  render();
+});
+
+canvas.addEventListener('mousemove', (ev) => {
+  if (!dragMode) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
+  const dx = (mx - dragStart.mx) / zoom, dy = (my - dragStart.my) / zoom;
+
+  if (dragMode === 'move') {
+    selected.x = Math.round(dragOrigBox.x + dx);
+    selected.y = Math.round(dragOrigBox.y + dy);
+  } else if (dragMode === 'new') {
+    pendingBox = {
+      x: Math.round(Math.min(dragOrigBox.x, dragOrigBox.x + dx)),
+      y: Math.round(Math.min(dragOrigBox.y, dragOrigBox.y + dy)),
+      width: Math.round(Math.abs(dx)),
+      height: Math.round(Math.abs(dy)),
+    };
+    drawPendingPreview();
+    return;
+  } else if (dragMode.startsWith('resize-')) {
+    const corner = dragMode.split('-')[1];
+    let { x, y, width, height } = dragOrigBox;
+    if (corner.includes('W')) { width = width - dx; x = x + dx; }
+    if (corner.includes('E')) { width = width + dx; }
+    if (corner.includes('N')) { height = height - dy; y = y + dy; }
+    if (corner.includes('S')) { height = height + dy; }
+    selected.x = Math.round(x); selected.y = Math.round(y);
+    selected.width = Math.max(1, Math.round(width));
+    selected.height = Math.max(1, Math.round(height));
+  }
+  render();
+  syncFormFromSelected();
+});
+
+let pendingBox = null;
+function drawPendingPreview() {
+  render();
+  ctx.strokeStyle = '#fff';
+  ctx.setLineDash([4, 4]);
+  ctx.strokeRect(pendingBox.x * zoom, pendingBox.y * zoom, pendingBox.width * zoom, pendingBox.height * zoom);
+  ctx.setLineDash([]);
+}
+
+window.addEventListener('mouseup', () => {
+  if (dragMode === 'new' && pendingBox && pendingBox.width > 3 && pendingBox.height > 3) {
+    const category = 'uncertain';
+    const count = entries.filter(e => e.category === category).length + 1;
+    const filename = `${category}_${String(count).padStart(3, '0')}.png`;
+    const newEntry = {
+      filename, category, x: pendingBox.x, y: pendingBox.y,
+      width: pendingBox.width, height: pendingBox.height,
+      source_sheet: currentSheet, needs_review: true, review_reason: 'manually added',
+    };
+    entries.push(newEntry);
+    selected = newEntry;
+  }
+  dragMode = null; dragOrigBox = null; pendingBox = null;
+  refreshSidebar();
+  render();
+});
+
+document.getElementById('zoomIn').onclick = () => { zoom = Math.min(4, zoom * 1.25); render(); document.getElementById('zoomReset').textContent = Math.round(zoom*100)+'%'; };
+document.getElementById('zoomOut').onclick = () => { zoom = Math.max(0.1, zoom / 1.25); render(); document.getElementById('zoomReset').textContent = Math.round(zoom*100)+'%'; };
+document.getElementById('zoomReset').onclick = () => { fitZoom(); render(); };
+
+function syncFormFromSelected() {
+  document.getElementById('fX').value = selected.x;
+  document.getElementById('fY').value = selected.y;
+  document.getElementById('fW').value = selected.width;
+  document.getElementById('fH').value = selected.height;
+}
+
+function refreshSidebar() {
+  const noSel = document.getElementById('noSelection');
+  const form = document.getElementById('editForm');
+  if (!selected) {
+    noSel.style.display = 'block';
+    form.style.display = 'none';
+  } else {
+    noSel.style.display = 'none';
+    form.style.display = 'block';
+    document.getElementById('fFilename').value = selected.filename;
+    document.getElementById('fCategory').value = selected.category;
+    syncFormFromSelected();
+  }
+
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  currentEntries().forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'item' + (e === selected ? ' selected' : '') + (e.needs_review ? ' flag' : '');
+    div.innerHTML = `<span>${e.filename}</span><span class="badge">${e.category}</span>`;
+    div.onclick = () => { selected = e; refreshSidebar(); render(); };
+    list.appendChild(div);
+  });
+}
+
+['fX', 'fY', 'fW', 'fH'].forEach(id => {
+  document.getElementById(id).addEventListener('change', (ev) => {
+    if (!selected) return;
+    const key = { fX: 'x', fY: 'y', fW: 'width', fH: 'height' }[id];
+    selected[key] = parseInt(ev.target.value, 10) || 0;
+    render();
+  });
+});
+
+document.getElementById('fCategory').addEventListener('change', (ev) => {
+  if (!selected) return;
+  const oldCat = selected.category;
+  selected._old_category = selected._old_category || oldCat;
+  selected.category = ev.target.value;
+  const count = entries.filter(e => e.category === selected.category).length;
+  const prefixMap = { player:'player', npc:'npc', enemies:'enemy', bosses:'boss', props:'prop', ui:'ui', uncertain:'uncertain' };
+  selected.filename = `${prefixMap[selected.category]}_${String(count).padStart(3, '0')}.png`;
+  refreshSidebar();
+  render();
+});
+
+document.getElementById('deleteBtn').onclick = () => {
+  if (!selected) return;
+  entries = entries.filter(e => e !== selected);
+  selected = null;
+  refreshSidebar();
+  render();
+};
+
+document.getElementById('saveBtn').onclick = async () => {
+  const res = await fetch('/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(entries),
+  });
+  const toast = document.getElementById('toast');
+  toast.textContent = res.ok ? 'Saved — assets, metadata, contact sheet, and zip re-exported.' : 'Save failed, see server console.';
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 4000);
+};
+
+boot();
+</script>
+</body>
+</html>
