@@ -66,6 +66,14 @@ export default async function DashboardPage() {
             ยังไม่มีซีซั่นที่เปิดใช้งานอยู่ตอนนี้
           </p>
         )}
+        {activeSeason && (
+          <Link
+            href="/game"
+            className="mt-2 inline-block text-sm text-blue-600 underline"
+          >
+            ไปที่เกม →
+          </Link>
+        )}
       </section>
 
       <section>

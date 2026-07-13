@@ -1,6 +1,7 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import LogoutButton from "./logout-button";
+import Landing from "./landing/landing";
+import type { TrophyEntry } from "./landing/hall-of-fame-section";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -8,42 +9,40 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  let username: string | null = null;
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("username")
-      .eq("id", user.id)
-      .single();
-    username = profile?.username ?? null;
+    redirect("/dashboard");
   }
 
+  const { data: lastEndedSeason } = await supabase
+    .from("seasons")
+    .select("id, season_number")
+    .eq("status", "ended")
+    .order("ends_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: rawTrophies } = lastEndedSeason
+    ? await supabase
+        .from("season_rewards")
+        .select("trophy_tier, rank_in_season, profiles(username, display_name)")
+        .eq("season_id", lastEndedSeason.id)
+        .in("trophy_tier", ["gold", "silver", "bronze"])
+        .order("rank_in_season")
+    : { data: null };
+
+  const trophies: TrophyEntry[] | null =
+    rawTrophies?.map((entry) => ({
+      trophy_tier: entry.trophy_tier as TrophyEntry["trophy_tier"],
+      rank_in_season: entry.rank_in_season,
+      profile: Array.isArray(entry.profiles)
+        ? entry.profiles[0] ?? null
+        : entry.profiles,
+    })) ?? null;
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
-      {user ? (
-        <>
-          <h1 className="text-2xl font-semibold">ล็อกอินสำเร็จ</h1>
-          <p className="text-neutral-500">{user.email}</p>
-          <div className="flex gap-4">
-            <Link href="/dashboard" className="text-blue-600 underline">
-              แก้ไขโปรไฟล์
-            </Link>
-            {username && (
-              <Link href={`/${username}`} className="text-blue-600 underline">
-                ดูโปรไฟล์สาธารณะ
-              </Link>
-            )}
-          </div>
-          <LogoutButton />
-        </>
-      ) : (
-        <>
-          <h1 className="text-2xl font-semibold">ยังไม่ได้เข้าสู่ระบบ</h1>
-          <Link href="/login" className="text-blue-600 underline">
-            ไปหน้าเข้าสู่ระบบ
-          </Link>
-        </>
-      )}
-    </main>
+    <Landing
+      trophies={trophies}
+      seasonNumber={lastEndedSeason?.season_number ?? null}
+    />
   );
 }

@@ -10,6 +10,17 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Premium Retro-Futurism palette — shared across landing, login, and
+     (later) dashboard/profile so every page draws from the same tokens. */
+  --color-navy-950: #0b0f1a;
+  --color-navy-900: #10182b;
+  --color-charcoal-800: #1a2036;
+  --color-gold-500: #d4af37;
+  --color-gold-400: #e8c468;
+  --color-gold-glow: #f5d77a;
+  --color-ivory-100: #f4f0e6;
+  --color-slate-400: #8a93a6;
 }
 
 @media (prefers-color-scheme: dark) {

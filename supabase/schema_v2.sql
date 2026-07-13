@@ -1431,3 +1431,42 @@ create policy "item_price_bands_public_select" on public.item_price_bands
 -- ------------------------------------------------------------
 create policy "subscription_cancellations_owner_select" on public.subscription_cancellations
   for select using (auth.uid() = user_id);
+
+-- ============================================================
+-- LOGIN PAGE STATS
+-- ฟังก์ชัน public ใช้โชว์ตัวเลขสรุปบนหน้า /login (ก่อน login)
+-- security definer เพราะต้องข้าม RLS ของ profiles/game_stats/
+-- affiliate_links แต่ปลอดภัยเพราะ return แค่ตัวเลขนับรวม
+-- ไม่มี PII หรือข้อมูลรายบุคคลใดๆ หลุดออกมาเลย
+-- ============================================================
+create or replace function public.get_login_stats()
+returns table (
+  total_users bigint,
+  season_users bigint,
+  active_affiliate_links bigint
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_active_season uuid;
+begin
+  select id into v_active_season from public.seasons where status = 'active' limit 1;
+
+  return query
+  select
+    (select count(*) from public.profiles),
+    coalesce(
+      (select count(distinct user_id) from public.game_stats
+       where season_id = v_active_season),
+      0
+    ),
+    (select count(*) from public.affiliate_links where is_active = true);
+end;
+$$;
+
+comment on function public.get_login_stats() is 'สรุปตัวเลข public สำหรับหน้า /login: total_users, season_users (คนที่มี game_stats ใน season ที่ active), active_affiliate_links (is_active=true ทั้งแพลตฟอร์ม) ไม่มี PII';
+
+grant execute on function public.get_login_stats() to anon, authenticated;
