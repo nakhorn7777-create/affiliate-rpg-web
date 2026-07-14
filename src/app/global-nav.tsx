@@ -114,6 +114,14 @@ export default function GlobalNav({ user }: { user: NavUser }) {
               {t.game}
             </Link>
             <Link
+              href="/insights"
+              role="menuitem"
+              onClick={closeMenu}
+              className={menuItemClass}
+            >
+              {t.insights}
+            </Link>
+            <Link
               href="/dashboard"
               role="menuitem"
               onClick={closeMenu}

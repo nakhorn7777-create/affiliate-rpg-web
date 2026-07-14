@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import PublicProfileView from "./public-profile-view";
 
 export default async function PublicProfilePage({
@@ -36,9 +36,7 @@ export default async function PublicProfilePage({
       supabase.from("seasons").select("*").eq("status", "active").maybeSingle(),
     ]);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   const isOwnProfile = user?.id === profile.id;
 

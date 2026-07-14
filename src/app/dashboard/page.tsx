@@ -1,16 +1,15 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import DashboardView from "./dashboard-view";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   if (!user) {
     redirect("/login");
   }
+
+  const supabase = await createClient();
 
   const [{ data: profile }, { data: links }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).single(),

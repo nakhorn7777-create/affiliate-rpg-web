@@ -1,13 +1,11 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import Landing from "./landing/landing";
 import type { TrophyEntry } from "./landing/hall-of-fame-section";
 
 export default async function Home() {
+  const user = await getUser();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   if (user) {
     const { data: ownProfile } = await supabase

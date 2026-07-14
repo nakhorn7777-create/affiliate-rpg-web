@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -26,3 +27,14 @@ export async function createClient() {
     }
   );
 }
+
+// Deduped per-request via React's cache(): every Server Component that
+// calls getUser() during the same render (layout, page, nested components)
+// shares one Supabase auth roundtrip instead of one each.
+export const getUser = cache(async () => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+});

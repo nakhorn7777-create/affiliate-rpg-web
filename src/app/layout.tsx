@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import GlobalNav from "./global-nav";
+import FeedbackWidget from "./feedback-widget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,10 +25,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   let navUser: {
     username: string;
@@ -36,6 +34,7 @@ export default async function RootLayout({
   } | null = null;
 
   if (user) {
+    const supabase = await createClient();
     const { data: profile } = await supabase
       .from("profiles")
       .select("username, display_name, avatar_url")
@@ -59,6 +58,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         {navUser && <GlobalNav user={navUser} />}
         {children}
+        {user && <FeedbackWidget userId={user.id} />}
       </body>
     </html>
   );
