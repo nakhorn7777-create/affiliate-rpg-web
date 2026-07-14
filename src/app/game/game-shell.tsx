@@ -2,14 +2,22 @@
 
 import dynamic from "next/dynamic";
 import type { PlayerGameData } from "@/game/types";
+import { useLang } from "@/lib/lang/use-lang";
+import { appTranslations } from "@/lib/lang/app-translations";
+import { format } from "@/lib/lang/format";
+
+function GameLoadingFallback() {
+  const [lang] = useLang();
+  return (
+    <div className="flex h-[600px] w-[800px] items-center justify-center bg-neutral-900 text-sm text-neutral-400">
+      {appTranslations[lang].game.loadingGame}
+    </div>
+  );
+}
 
 const PhaserGame = dynamic(() => import("./phaser-game"), {
   ssr: false,
-  loading: () => (
-    <div className="flex h-[600px] w-[800px] items-center justify-center bg-neutral-900 text-sm text-neutral-400">
-      กำลังโหลดเกม...
-    </div>
-  ),
+  loading: () => <GameLoadingFallback />,
 });
 
 export type InventoryItem = {
@@ -35,6 +43,9 @@ export default function GameShell({
   maxStorageSlots: number;
   seasonNumber: number;
 }) {
+  const [lang] = useLang();
+  const t = appTranslations[lang].game;
+
   const xpIntoLevel = player.xp % XP_PER_LEVEL;
   const xpProgress = Math.min(100, (xpIntoLevel / XP_PER_LEVEL) * 100);
   const usedSmallSlots = inventory.reduce(
@@ -59,7 +70,8 @@ export default function GameShell({
             />
           </div>
           <p className="mt-1 text-xs text-neutral-300">
-            Token: {player.currency} · เข้าเกมสะสม {player.totalLoginDays} วัน
+            Token: {player.currency} ·{" "}
+            {format(t.loginDaysSuffix, { days: player.totalLoginDays })}
           </p>
         </div>
       </div>
@@ -67,11 +79,14 @@ export default function GameShell({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 p-3">
         <div className="pointer-events-auto rounded-md bg-black/70 p-2 text-white">
           <p className="mb-1 text-xs text-neutral-300">
-            คลังของ: {usedSmallSlots} / {maxSmallSlots} ช่องเล็ก
+            {format(t.inventoryHeading, {
+              used: usedSmallSlots,
+              max: maxSmallSlots,
+            })}
           </p>
           <div className="flex flex-wrap gap-2">
             {inventory.length === 0 && (
-              <p className="text-xs text-neutral-500">ยังไม่มีไอเทมในคลัง</p>
+              <p className="text-xs text-neutral-500">{t.inventoryEmpty}</p>
             )}
             {inventory.map((entry) => (
               <div

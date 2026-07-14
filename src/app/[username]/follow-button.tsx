@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { useLang } from "@/lib/lang/use-lang";
+import { appTranslations } from "@/lib/lang/app-translations";
 
 export default function FollowButton({
   followingId,
@@ -18,6 +20,8 @@ export default function FollowButton({
   const [followed, setFollowed] = useState(initialAlreadyFollowed);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lang] = useLang();
+  const t = appTranslations[lang].followButton;
 
   const supabase = createClient();
 
@@ -49,17 +53,11 @@ export default function FollowButton({
   }
 
   if (!activeSeasonId) {
-    return (
-      <p className="text-sm text-neutral-400">
-        ยังไม่มีซีซั่นที่เปิดใช้งานอยู่ตอนนี้ ยังกด follow ไม่ได้
-      </p>
-    );
+    return <p className="text-sm text-neutral-400">{t.noSeason}</p>;
   }
 
   if (followed) {
-    return (
-      <p className="text-sm text-neutral-500">ติดตามแล้ว (ซีซั่นนี้)</p>
-    );
+    return <p className="text-sm text-neutral-500">{t.alreadyFollowed}</p>;
   }
 
   return (
@@ -69,14 +67,14 @@ export default function FollowButton({
         disabled={loading || !isLoggedIn}
         className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
-        {loading ? "กำลังติดตาม..." : "+ Follow"}
+        {loading ? t.following : t.follow}
       </button>
       {!isLoggedIn && (
         <p className="text-xs text-neutral-400">
           <Link href="/login" className="underline">
-            เข้าสู่ระบบ
+            {t.loginPrompt}
           </Link>{" "}
-          เพื่อ follow
+          {t.loginSuffix}
         </p>
       )}
       {error && <p className="text-sm text-red-600">{error}</p>}

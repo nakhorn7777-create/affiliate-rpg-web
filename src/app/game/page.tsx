@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import GameShell from "./game-shell";
+import GameView from "./game-view";
 
 export default async function GamePage() {
   const supabase = await createClient();
@@ -20,16 +19,7 @@ export default async function GamePage() {
     .maybeSingle();
 
   if (!activeSeason) {
-    return (
-      <main className="mx-auto flex max-w-2xl flex-col gap-4 p-8">
-        <Link href="/dashboard" className="text-sm text-blue-600 underline">
-          กลับแดชบอร์ด
-        </Link>
-        <p className="text-sm text-neutral-500">
-          ยังไม่มีซีซั่นที่เปิดใช้งานอยู่ตอนนี้ ยังเข้าเกมไม่ได้
-        </p>
-      </main>
-    );
+    return <GameView status="no-season" />;
   }
 
   await supabase.rpc("record_daily_login", {
@@ -60,50 +50,29 @@ export default async function GamePage() {
     ]);
 
   if (!gameStats) {
-    return (
-      <main className="mx-auto flex max-w-2xl flex-col gap-4 p-8">
-        <Link href="/dashboard" className="text-sm text-blue-600 underline">
-          กลับแดชบอร์ด
-        </Link>
-        <p className="text-sm text-red-600">
-          ไม่พบข้อมูลผู้เล่นในซีซั่นนี้ ลองรีเฟรชหน้าอีกครั้ง
-        </p>
-      </main>
-    );
+    return <GameView status="no-stats" />;
   }
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col items-center gap-4 p-8">
-      <div className="flex w-full max-w-[800px] items-center justify-between">
-        <h1 className="text-xl font-semibold">โลกเกม</h1>
-        <Link href="/dashboard" className="text-sm text-blue-600 underline">
-          กลับแดชบอร์ด
-        </Link>
-      </div>
-
-      <GameShell
-        player={{
-          displayName: profile?.display_name ?? profile?.username ?? "Player",
-          currency: gameStats.currency,
-          level: gameStats.level,
-          xp: gameStats.xp,
-          tier: gameStats.tier,
-          totalLoginDays: gameStats.total_login_days,
-        }}
-        inventory={(inventory ?? []).map((entry) => ({
-          item_id: entry.item_id,
-          quantity: entry.quantity,
-          game_items: Array.isArray(entry.game_items)
-            ? entry.game_items[0] ?? null
-            : entry.game_items,
-        }))}
-        maxStorageSlots={maxStorageSlots ?? 5}
-        seasonNumber={activeSeason.season_number}
-      />
-
-      <p className="text-xs text-neutral-500">
-        เดิน: ลูกศร หรือ WASD
-      </p>
-    </main>
+    <GameView
+      status="ready"
+      player={{
+        displayName: profile?.display_name ?? profile?.username ?? "Player",
+        currency: gameStats.currency,
+        level: gameStats.level,
+        xp: gameStats.xp,
+        tier: gameStats.tier,
+        totalLoginDays: gameStats.total_login_days,
+      }}
+      inventory={(inventory ?? []).map((entry) => ({
+        item_id: entry.item_id,
+        quantity: entry.quantity,
+        game_items: Array.isArray(entry.game_items)
+          ? entry.game_items[0] ?? null
+          : entry.game_items,
+      }))}
+      maxStorageSlots={maxStorageSlots ?? 5}
+      seasonNumber={activeSeason.season_number}
+    />
   );
 }

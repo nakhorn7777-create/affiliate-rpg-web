@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useLang } from "@/lib/lang/use-lang";
+import { appTranslations } from "@/lib/lang/app-translations";
+import { format } from "@/lib/lang/format";
 
 type AffiliateLink = {
   id: string;
@@ -30,6 +33,8 @@ export default function AffiliateLinksManager({
   });
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lang] = useLang();
+  const t = appTranslations[lang].affiliateLinks;
 
   const supabase = createClient();
 
@@ -47,7 +52,7 @@ export default function AffiliateLinksManager({
 
     const slot = nextFreeSlot();
     if (slot === null) {
-      setError(`เต็มแล้ว (${maxSlots} ช่อง)`);
+      setError(format(t.full, { max: maxSlots }));
       return;
     }
 
@@ -106,7 +111,7 @@ export default function AffiliateLinksManager({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-neutral-500">
-        ใช้ไป {links.length} / {maxSlots} ช่อง
+        {format(t.slotsUsed, { used: links.length, max: maxSlots })}
       </p>
 
       <ul className="flex flex-col gap-2">
@@ -119,7 +124,7 @@ export default function AffiliateLinksManager({
               <p className="truncate text-sm font-medium">
                 #{link.slot_number} {link.title}{" "}
                 {!link.is_active && (
-                  <span className="text-neutral-400">(ปิดใช้งาน)</span>
+                  <span className="text-neutral-400">{t.disabledTag}</span>
                 )}
               </p>
               <p className="truncate text-xs text-neutral-500">{link.url}</p>
@@ -129,19 +134,19 @@ export default function AffiliateLinksManager({
                 onClick={() => handleToggleActive(link)}
                 className="text-xs text-neutral-600 underline"
               >
-                {link.is_active ? "ปิดใช้งาน" : "เปิดใช้งาน"}
+                {link.is_active ? t.disable : t.enable}
               </button>
               <button
                 onClick={() => handleDelete(link.id)}
                 className="text-xs text-red-600 underline"
               >
-                ลบ
+                {t.delete}
               </button>
             </div>
           </li>
         ))}
         {links.length === 0 && (
-          <li className="text-sm text-neutral-400">ยังไม่มีลิงก์</li>
+          <li className="text-sm text-neutral-400">{t.empty}</li>
         )}
       </ul>
 
@@ -149,16 +154,16 @@ export default function AffiliateLinksManager({
         onSubmit={handleAdd}
         className="flex flex-col gap-2 rounded-md border border-neutral-200 p-3"
       >
-        <p className="text-sm font-medium">เพิ่มลิงก์ใหม่</p>
+        <p className="text-sm font-medium">{t.addNew}</p>
         <input
-          placeholder="ชื่อลิงก์"
+          placeholder={t.titlePlaceholder}
           required
           value={form.title}
           onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
           className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
         />
         <input
-          placeholder="URL"
+          placeholder={t.urlPlaceholder}
           required
           type="url"
           value={form.url}
@@ -166,7 +171,7 @@ export default function AffiliateLinksManager({
           className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
         />
         <input
-          placeholder="Image URL (ไม่บังคับ)"
+          placeholder={t.imagePlaceholder}
           value={form.image_url}
           onChange={(e) =>
             setForm((f) => ({ ...f, image_url: e.target.value }))
@@ -174,7 +179,7 @@ export default function AffiliateLinksManager({
           className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
         />
         <textarea
-          placeholder="คำอธิบาย (ไม่บังคับ)"
+          placeholder={t.descriptionPlaceholder}
           value={form.description}
           onChange={(e) =>
             setForm((f) => ({ ...f, description: e.target.value }))
@@ -187,7 +192,7 @@ export default function AffiliateLinksManager({
           disabled={adding || links.length >= maxSlots}
           className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
-          {adding ? "กำลังเพิ่ม..." : "เพิ่มลิงก์"}
+          {adding ? t.adding : t.addButton}
         </button>
         {error && <p className="text-sm text-red-600">{error}</p>}
       </form>

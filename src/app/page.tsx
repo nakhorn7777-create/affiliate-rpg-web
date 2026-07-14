@@ -10,7 +10,13 @@ export default async function Home() {
   } = await supabase.auth.getUser();
 
   if (user) {
-    redirect("/dashboard");
+    const { data: ownProfile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    redirect(ownProfile?.username ? `/${ownProfile.username}` : "/dashboard");
   }
 
   const { data: lastEndedSeason } = await supabase

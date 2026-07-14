@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
-import type { Lang } from "./translations";
+
+export type Lang = "th" | "en";
 
 const STORAGE_KEY = "arpg_lang";
 const listeners = new Set<() => void>();

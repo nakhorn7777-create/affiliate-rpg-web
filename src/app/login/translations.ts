@@ -1,4 +1,4 @@
-export type Lang = "th" | "en";
+import type { Lang } from "@/lib/lang/use-lang";
 
 export const translations = {
   th: {

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useLang } from "@/lib/lang/use-lang";
+import { appTranslations } from "@/lib/lang/app-translations";
 
 type Profile = {
   id: string;
@@ -28,6 +30,8 @@ export default function ProfileForm({ profile }: { profile: Profile | null }) {
   const [message, setMessage] = useState<
     { type: "success" | "error"; text: string } | null
   >(null);
+  const [lang] = useLang();
+  const t = appTranslations[lang].profileForm;
 
   const supabase = createClient();
 
@@ -59,22 +63,22 @@ export default function ProfileForm({ profile }: { profile: Profile | null }) {
       setMessage({
         type: "error",
         text: error.message.includes("duplicate")
-          ? "username นี้ถูกใช้ไปแล้ว"
+          ? t.usernameTaken
           : error.message,
       });
     } else {
-      setMessage({ type: "success", text: "บันทึกโปรไฟล์แล้ว" });
+      setMessage({ type: "success", text: t.saveSuccess });
     }
   }
 
   if (!profile) {
-    return <p className="text-sm text-red-600">ไม่พบข้อมูลโปรไฟล์</p>;
+    return <p className="text-sm text-red-600">{t.notFound}</p>;
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm">
-        Username
+        {t.username}
         <input
           value={form.username}
           onChange={(e) => update("username", e.target.value)}
@@ -83,7 +87,7 @@ export default function ProfileForm({ profile }: { profile: Profile | null }) {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        ชื่อที่แสดง
+        {t.displayName}
         <input
           value={form.display_name}
           onChange={(e) => update("display_name", e.target.value)}
@@ -91,7 +95,7 @@ export default function ProfileForm({ profile }: { profile: Profile | null }) {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        Avatar URL
+        {t.avatarUrl}
         <input
           value={form.avatar_url}
           onChange={(e) => update("avatar_url", e.target.value)}
@@ -99,7 +103,7 @@ export default function ProfileForm({ profile }: { profile: Profile | null }) {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        Bio
+        {t.bio}
         <textarea
           value={form.bio}
           onChange={(e) => update("bio", e.target.value)}
@@ -108,7 +112,7 @@ export default function ProfileForm({ profile }: { profile: Profile | null }) {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        TikTok URL
+        {t.tiktokUrl}
         <input
           value={form.tiktok_url}
           onChange={(e) => update("tiktok_url", e.target.value)}
@@ -116,7 +120,7 @@ export default function ProfileForm({ profile }: { profile: Profile | null }) {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        Facebook URL
+        {t.facebookUrl}
         <input
           value={form.facebook_url}
           onChange={(e) => update("facebook_url", e.target.value)}
@@ -124,7 +128,7 @@ export default function ProfileForm({ profile }: { profile: Profile | null }) {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        Instagram URL
+        {t.instagramUrl}
         <input
           value={form.instagram_url}
           onChange={(e) => update("instagram_url", e.target.value)}
@@ -137,7 +141,7 @@ export default function ProfileForm({ profile }: { profile: Profile | null }) {
         disabled={saving}
         className="mt-2 w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
-        {saving ? "กำลังบันทึก..." : "บันทึกโปรไฟล์"}
+        {saving ? t.saving : t.saveButton}
       </button>
 
       {message && (

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Pixelify_Sans, Prompt } from "next/font/google";
 import { createClient } from "@/lib/supabase/client";
 import { translations } from "./translations";
-import { useLang } from "./use-lang";
+import { useLang } from "@/lib/lang/use-lang";
 import Scenery from "./scenery";
 import NatureParticles from "./nature-particles";
 import StatsPanel from "./stats-panel";
