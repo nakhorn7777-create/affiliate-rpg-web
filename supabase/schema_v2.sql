@@ -1470,3 +1470,291 @@ $$;
 comment on function public.get_login_stats() is 'สรุปตัวเลข public สำหรับหน้า /login: total_users, season_users (คนที่มี game_stats ใน season ที่ active), active_affiliate_links (is_active=true ทั้งแพลตฟอร์ม) ไม่มี PII';
 
 grant execute on function public.get_login_stats() to anon, authenticated;
+
+-- ============================================================
+-- ============================================================
+-- PORTFOLIO PIVOT: theme, portfolio uploads, brand job board
+-- เพิ่มระบบ 3 อย่างสำหรับ pivot ไปทาง self-declared portfolio platform:
+--   1. ธีมโปรไฟล์ (สี/ฟอนต์/เพลง/niche tag)
+--   2. ผลงานภาพหน้าจอ (อ้างอิงไฟล์ใน Supabase Storage)
+--   3. กระดานงานจ้าง (brand/creator โพสต์ deal ให้คนอื่นมาสมัคร)
+-- ============================================================
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- 1a. PROFILE THEME + BRAND INFO (เพิ่ม column ใน profiles เดิม)
+--
+-- ตั้งใจไม่เปิดให้ใส่ raw custom CSS เพราะเป็นช่องโหว่จริง (CSS
+-- attribute-selector สามารถขโมยข้อมูลบางอย่างจากหน้าเว็บได้ หรือใช้
+-- ทำ overlay หลอกลวงผู้ใช้ได้) ใช้ theme แบบ structured (สี + ฟอนต์
+-- จาก allowlist) แทน ปลอดภัยกว่ามาก ฝั่ง frontend ค่อยแปลงเป็น CSS
+-- variable เอง
+--
+-- music_url เก็บเป็น text ธรรมดา แต่ frontend ต้อง whitelist โดเมนที่
+-- ยอมให้ embed (เช่น open.spotify.com, youtube.com เท่านั้น) ก่อนสร้าง
+-- iframe เสมอ ห้าม render iframe จาก URL ใดๆ ที่ผู้ใช้กรอกมาตรงๆ
+--
+-- has_brand/brand_name/brand_website: ข้อมูลแบรนด์ที่ผู้ใช้กรอกเสริม
+-- ได้ (ไม่บังคับ) ใช้ตอนเลือกโพสต์งานจ้างในฐานะ "Brand"
+-- ------------------------------------------------------------
+alter table public.profiles
+  add column theme_primary_color text
+    check (theme_primary_color ~ '^#[0-9a-fA-F]{6}$'),
+  add column theme_secondary_color text
+    check (theme_secondary_color ~ '^#[0-9a-fA-F]{6}$'),
+  add column theme_font text
+    check (theme_font in ('sans', 'serif', 'pixel')),
+  add column music_url text,
+  add column has_brand boolean not null default false,
+  add column brand_name text,
+  add column brand_website text;
+
+-- ------------------------------------------------------------
+-- 1b. NICHE_TAGS + PROFILE_NICHE_TAGS
+-- master data pattern เดียวกับ game_items: niche_tags เป็นรายการกลาง
+-- จัดการผ่าน admin เท่านั้น (ไม่มี insert/update/delete policy ให้
+-- client) ส่วน profile_niche_tags คือ many-to-many ที่เจ้าของ profile
+-- เลือกติด/ถอด tag เองได้
+-- ------------------------------------------------------------
+create table public.niche_tags (
+  id uuid primary key default uuid_generate_v4(),
+  slug text unique not null,
+  label text not null,
+  created_at timestamptz not null default now()
+);
+
+create table public.profile_niche_tags (
+  profile_id uuid not null references public.profiles(id) on delete cascade,
+  tag_id uuid not null references public.niche_tags(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (profile_id, tag_id)
+);
+
+comment on table public.niche_tags is 'รายการ niche tag กลาง (master data) จัดการผ่าน admin เท่านั้น';
+comment on table public.profile_niche_tags is 'tag ที่แต่ละ profile เลือกติดไว้ (many-to-many)';
+
+-- ------------------------------------------------------------
+-- 2. PORTFOLIO_ITEMS
+-- เก็บแค่ "อ้างอิง" ไฟล์ใน Supabase Storage (bucket ชื่อ 'portfolio')
+-- ไม่เก็บตัวไฟล์จริงในตารางนี้ — ต้องสร้าง path แบบ
+-- {user_id}/{filename} เสมอ (ดู storage policy ด้านล่างที่อ้างอิง
+-- โฟลเดอร์แรกของ path เป็นเจ้าของไฟล์)
+-- ------------------------------------------------------------
+create table public.portfolio_items (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  storage_path text not null,
+  caption text,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index idx_portfolio_items_user_id on public.portfolio_items(user_id, sort_order);
+
+comment on table public.portfolio_items is 'อ้างอิงภาพผลงานใน Supabase Storage bucket "portfolio" (path รูปแบบ {user_id}/{filename})';
+
+-- Storage bucket + policy สำหรับ bucket 'portfolio' (public read, เจ้าของ
+-- โฟลเดอร์เท่านั้นที่ upload/ลบได้ — ใช้ชื่อโฟลเดอร์แรกของ path เทียบ
+-- กับ auth.uid() ตาม convention {user_id}/{filename})
+insert into storage.buckets (id, name, public)
+values ('portfolio', 'portfolio', true)
+on conflict (id) do nothing;
+
+create policy "portfolio_bucket_public_read" on storage.objects
+  for select using (bucket_id = 'portfolio');
+
+create policy "portfolio_bucket_owner_insert" on storage.objects
+  for insert with check (
+    bucket_id = 'portfolio'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+create policy "portfolio_bucket_owner_delete" on storage.objects
+  for delete using (
+    bucket_id = 'portfolio'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- ------------------------------------------------------------
+-- 3. BRAND_DEALS + DEAL_REPLIES (กระดานงานจ้าง)
+--
+-- ใครก็โพสต์งานจ้างได้ (ไม่แยก account type) แต่ต้องเลือกว่าโพสต์ใน
+-- ฐานะ 'brand' หรือ 'creator' ต่อ 1 โพสต์ (posted_as) ถ้าเลือก 'brand'
+-- ต้องเคยกรอก has_brand = true ในโปรไฟล์ไว้ก่อน (บังคับผ่าน trigger)
+--
+-- 1 deal รับได้หลายคน (slots_total) เจ้าของโพสต์ (posted_by) เป็นคน
+-- accept ผู้สมัครทีละคนผ่าน accept_deal_reply จนครบ slots_total
+-- และกดปิดงานเองผ่าน complete_deal เมื่อไหร่ก็ได้ (ไม่บังคับว่าต้อง
+-- ครบ slots_total ก่อนถึงจะปิดได้) — ก่อนกดปิด ใครก็ยังเข้ามาตอบ
+-- กระทู้ (deal_replies) เพิ่มได้เรื่อยๆ
+--
+-- ทุกการเปลี่ยน status (accept/complete) บังคับผ่าน RPC (security
+-- definer) เท่านั้น ไม่มี update policy ให้ client เขียนตรงๆ เพื่อกัน
+-- การ bypass เงื่อนไข slots_total/ownership
+-- ------------------------------------------------------------
+create table public.brand_deals (
+  id uuid primary key default uuid_generate_v4(),
+  posted_by uuid not null references public.profiles(id) on delete cascade,
+  posted_as text not null check (posted_as in ('brand', 'creator')),
+  title text not null,
+  description text not null,
+  external_asset_url text,
+  slots_total int not null default 1 check (slots_total > 0),
+  status text not null default 'open'
+    check (status in ('open', 'completed', 'cancelled')),
+  created_at timestamptz not null default now(),
+  completed_at timestamptz
+);
+
+create index idx_brand_deals_status on public.brand_deals(status, created_at desc);
+
+comment on table public.brand_deals is 'กระดานงานจ้าง: brand/creator โพสต์ deal พร้อมลิงก์ asset ภายนอก (Google Drive/Canva) ให้คนอื่นสมัคร';
+
+create table public.deal_replies (
+  id uuid primary key default uuid_generate_v4(),
+  deal_id uuid not null references public.brand_deals(id) on delete cascade,
+  applicant_id uuid not null references public.profiles(id) on delete cascade,
+  message text,
+  status text not null default 'pending'
+    check (status in ('pending', 'accepted', 'rejected')),
+  created_at timestamptz not null default now()
+);
+
+create index idx_deal_replies_deal_id on public.deal_replies(deal_id, created_at);
+
+comment on table public.deal_replies is 'คนสมัคร/ตอบกระทู้ของแต่ละ deal เจ้าของ deal accept ได้ทีละคนจนครบ slots_total';
+
+-- Trigger: ถ้าเลือกโพสต์ในฐานะ 'brand' ต้องเคยกรอกข้อมูลแบรนด์ไว้ก่อน
+create or replace function public.validate_deal_posted_as()
+returns trigger as $$
+declare
+  v_has_brand boolean;
+begin
+  if new.posted_as = 'brand' then
+    select has_brand into v_has_brand
+    from public.profiles
+    where id = new.posted_by;
+
+    if not coalesce(v_has_brand, false) then
+      raise exception 'ต้องกรอกข้อมูลแบรนด์ในโปรไฟล์ก่อน ถึงจะโพสต์ในฐานะ Brand ได้';
+    end if;
+  end if;
+
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger validate_deal_posted_as_trigger
+  before insert on public.brand_deals
+  for each row execute function public.validate_deal_posted_as();
+
+-- Function: จำนวนคนที่ accept แล้วของ deal หนึ่งๆ
+create or replace function public.count_accepted_replies(p_deal_id uuid)
+returns int as $$
+  select count(*)::int
+  from public.deal_replies
+  where deal_id = p_deal_id and status = 'accepted';
+$$ language sql stable;
+
+-- Function: เจ้าของ deal accept ผู้สมัครคนหนึ่ง (กันรับเกิน slots_total
+-- ด้วย "select ... for update" ล็อกกันสองคน accept ชนกันพร้อมกัน)
+create or replace function public.accept_deal_reply(
+  p_reply_id uuid,
+  p_actor_id uuid
+) returns void as $$
+declare
+  v_reply record;
+  v_deal record;
+  v_accepted_count int;
+begin
+  select * into v_reply from public.deal_replies where id = p_reply_id for update;
+  if v_reply is null then
+    raise exception 'ไม่พบคำตอบนี้';
+  end if;
+
+  select * into v_deal from public.brand_deals where id = v_reply.deal_id for update;
+  if v_deal.posted_by <> p_actor_id then
+    raise exception 'เฉพาะเจ้าของดีลเท่านั้นที่ accept ได้';
+  end if;
+
+  if v_deal.status <> 'open' then
+    raise exception 'ดีลนี้ปิดรับสมัครแล้ว';
+  end if;
+
+  select public.count_accepted_replies(v_deal.id) into v_accepted_count;
+  if v_accepted_count >= v_deal.slots_total then
+    raise exception 'รับครบจำนวนที่กำหนดแล้ว (% คน)', v_deal.slots_total;
+  end if;
+
+  update public.deal_replies set status = 'accepted' where id = p_reply_id;
+end;
+$$ language plpgsql security definer;
+
+-- Function: เจ้าของ deal ปิดงาน (กดว่าเสร็จสิ้นแล้ว) ไม่บังคับว่าต้อง
+-- ครบ slots_total ก่อน — ปิดเมื่อไหร่ก็ได้ตามที่เจ้าของ deal ต้องการ
+create or replace function public.complete_deal(
+  p_deal_id uuid,
+  p_actor_id uuid
+) returns void as $$
+begin
+  update public.brand_deals
+  set status = 'completed', completed_at = now()
+  where id = p_deal_id and posted_by = p_actor_id and status = 'open';
+
+  if not found then
+    raise exception 'ไม่สามารถปิดดีลนี้ได้ (ไม่ใช่เจ้าของ หรือดีลไม่ได้เปิดอยู่)';
+  end if;
+end;
+$$ language plpgsql security definer;
+
+-- ============================================================
+-- RLS: PORTFOLIO PIVOT
+-- ============================================================
+alter table public.niche_tags enable row level security;
+alter table public.profile_niche_tags enable row level security;
+alter table public.portfolio_items enable row level security;
+alter table public.brand_deals enable row level security;
+alter table public.deal_replies enable row level security;
+
+-- niche_tags: master data public select เท่านั้น จัดการผ่าน admin
+create policy "niche_tags_public_select" on public.niche_tags
+  for select using (true);
+
+-- profile_niche_tags: ใครก็ดูได้ (แสดงบนโปรไฟล์) เจ้าของติด/ถอด tag เอง
+create policy "profile_niche_tags_public_select" on public.profile_niche_tags
+  for select using (true);
+
+create policy "profile_niche_tags_owner_insert" on public.profile_niche_tags
+  for insert with check (auth.uid() = profile_id);
+
+create policy "profile_niche_tags_owner_delete" on public.profile_niche_tags
+  for delete using (auth.uid() = profile_id);
+
+-- portfolio_items: ใครก็ดูได้ (โชว์ผลงาน) เจ้าของจัดการเองได้เต็มที่
+create policy "portfolio_items_public_select" on public.portfolio_items
+  for select using (true);
+
+create policy "portfolio_items_owner_insert" on public.portfolio_items
+  for insert with check (auth.uid() = user_id);
+
+create policy "portfolio_items_owner_update" on public.portfolio_items
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "portfolio_items_owner_delete" on public.portfolio_items
+  for delete using (auth.uid() = user_id);
+
+-- brand_deals: ใครก็ดูกระดานงานจ้างได้ (public) โพสต์ใหม่ได้เอง แต่
+-- ไม่มี update/delete policy เลย — เปลี่ยน status ผ่าน RPC เท่านั้น
+create policy "brand_deals_public_select" on public.brand_deals
+  for select using (true);
+
+create policy "brand_deals_owner_insert" on public.brand_deals
+  for insert with check (auth.uid() = posted_by);
+
+-- deal_replies: ใครก็อ่านกระทู้ได้ (public) ตอบ/สมัครได้เอง แต่ไม่มี
+-- update/delete policy เลย — accept ผ่าน accept_deal_reply RPC เท่านั้น
+create policy "deal_replies_public_select" on public.deal_replies
+  for select using (true);
+
+create policy "deal_replies_self_insert" on public.deal_replies
+  for insert with check (auth.uid() = applicant_id);
