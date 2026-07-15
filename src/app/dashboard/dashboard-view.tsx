@@ -1,6 +1,6 @@
 "use client";
 
-import ProfileForm from "./profile-form";
+import AccountSettingsForm from "./account-settings-form";
 import AffiliateLinksManager from "./affiliate-links-manager";
 import { useLang } from "@/lib/lang/use-lang";
 import { appTranslations } from "@/lib/lang/app-translations";
@@ -14,6 +14,7 @@ type Profile = {
   tiktok_url: string | null;
   facebook_url: string | null;
   instagram_url: string | null;
+  theme_preset: string | null;
 };
 
 type AffiliateLink = {
@@ -43,10 +44,7 @@ export default function DashboardView({
     <main className="mx-auto flex max-w-2xl flex-col gap-10 p-8">
       <h1 className="text-2xl font-semibold">{t.title}</h1>
 
-      <section>
-        <h2 className="mb-3 font-medium">{t.profileInfoHeading}</h2>
-        <ProfileForm profile={profile} />
-      </section>
+      <AccountSettingsForm profile={profile} />
 
       <section>
         <h2 className="mb-3 font-medium">{t.affiliateLinksHeading}</h2>
