@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { format } from "@/lib/lang/format";
 import type { AppTranslation } from "@/lib/lang/app-translations";
-import { ModalShell } from "./insights-view";
+import { ModalShell } from "./shared";
 
 type InsightsT = AppTranslation["insights"];
 
