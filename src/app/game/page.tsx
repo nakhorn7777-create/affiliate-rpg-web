@@ -22,7 +22,6 @@ export default async function GamePage() {
   }
 
   await supabase.rpc("record_daily_login", {
-    p_user_id: user.id,
     p_season_id: activeSeason.id,
   });
 
