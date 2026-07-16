@@ -5,12 +5,25 @@ export default async function JobsPage() {
   const user = await getUser();
   const supabase = await createClient();
 
-  const { data: deals } = await supabase
-    .from("brand_deals")
-    .select("*, profiles(username, display_name, avatar_url), deal_replies(count)")
-    .eq("status", "open")
-    .order("created_at", { ascending: false })
-    .limit(50);
+  const dealColumns =
+    "*, profiles(username, display_name, avatar_url), deal_replies(count)";
+
+  const [{ data: deals }, myDealsResult] = await Promise.all([
+    supabase
+      .from("brand_deals")
+      .select(dealColumns)
+      .eq("status", "open")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    user
+      ? supabase
+          .from("brand_deals")
+          .select(dealColumns)
+          .eq("posted_by", user.id)
+          .order("created_at", { ascending: false })
+          .limit(50)
+      : Promise.resolve({ data: null }),
+  ]);
 
   let hasBrand = false;
   if (user) {
@@ -27,6 +40,7 @@ export default async function JobsPage() {
       userId={user?.id ?? null}
       hasBrand={hasBrand}
       initialDeals={deals ?? []}
+      initialMyDeals={myDealsResult.data ?? []}
     />
   );
 }

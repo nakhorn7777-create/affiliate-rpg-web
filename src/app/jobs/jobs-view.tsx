@@ -4,60 +4,44 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useLang } from "@/lib/lang/use-lang";
-import { appTranslations, type AppTranslation } from "@/lib/lang/app-translations";
+import { appTranslations } from "@/lib/lang/app-translations";
 import { format } from "@/lib/lang/format";
+import {
+  posterOf,
+  replyCountOf,
+  formatBudget,
+  type JobsT,
+  type PostedAs,
+  type Deal,
+} from "./shared";
 
-type JobsT = AppTranslation["jobs"];
-
-type PostedAs = "brand" | "creator";
-type DealStatus = "open" | "completed" | "cancelled";
-
-type PosterProfile = {
-  username: string;
-  display_name: string | null;
-  avatar_url: string | null;
-};
-
-type Deal = {
-  id: string;
-  posted_by: string;
-  posted_as: PostedAs;
-  title: string;
-  description: string;
-  external_asset_url: string | null;
-  slots_total: number;
-  status: DealStatus;
-  created_at: string;
-  profiles: PosterProfile | PosterProfile[] | null;
-  deal_replies: { count: number }[];
-};
-
-function posterOf(deal: Deal): PosterProfile | null {
-  return Array.isArray(deal.profiles) ? deal.profiles[0] ?? null : deal.profiles;
-}
-
-function replyCountOf(deal: Deal): number {
-  return deal.deal_replies?.[0]?.count ?? 0;
-}
+type Tab = "all" | "mine";
 
 export default function JobsView({
   userId,
   hasBrand,
   initialDeals,
+  initialMyDeals,
 }: {
   userId: string | null;
   hasBrand: boolean;
   initialDeals: Deal[];
+  initialMyDeals: Deal[];
 }) {
   const [deals, setDeals] = useState(initialDeals);
+  const [myDeals, setMyDeals] = useState(initialMyDeals);
+  const [tab, setTab] = useState<Tab>("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [lang] = useLang();
   const t = appTranslations[lang].jobs;
 
   function handlePosted(deal: Deal) {
     setDeals((prev) => [deal, ...prev]);
+    setMyDeals((prev) => [deal, ...prev]);
     setModalOpen(false);
   }
+
+  const visibleDeals = tab === "all" ? deals : myDeals;
 
   return (
     <main className="min-h-screen bg-navy-950 px-4 py-8 text-ivory-100 sm:px-8">
@@ -84,18 +68,44 @@ export default function JobsView({
           )}
         </div>
 
+        {userId && (
+          <div className="flex w-fit items-center gap-1 rounded-full border border-gold-500/20 bg-charcoal-800/60 p-1">
+            <button
+              onClick={() => setTab("all")}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                tab === "all"
+                  ? "bg-gold-500 text-navy-950"
+                  : "text-ivory-100/70 hover:text-ivory-100"
+              }`}
+            >
+              {t.tabAll}
+            </button>
+            <button
+              onClick={() => setTab("mine")}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                tab === "mine"
+                  ? "bg-gold-500 text-navy-950"
+                  : "text-ivory-100/70 hover:text-ivory-100"
+              }`}
+            >
+              {t.tabMine}
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col gap-3">
-          {deals.length === 0 ? (
+          {visibleDeals.length === 0 ? (
             <p className="py-10 text-center text-sm text-slate-400">
               {t.listEmpty}
             </p>
           ) : (
-            deals.map((deal) => {
+            visibleDeals.map((deal) => {
               const poster = posterOf(deal);
               return (
-                <div
+                <Link
                   key={deal.id}
-                  className="rounded-xl border border-gold-500/15 bg-charcoal-800/60 p-4"
+                  href={`/jobs/${deal.id}`}
+                  className="block rounded-xl border border-gold-500/15 bg-charcoal-800/60 p-4 transition hover:border-gold-500/40"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -106,11 +116,16 @@ export default function JobsView({
                         {deal.description}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full bg-gold-500/10 px-2 py-1 text-xs font-medium text-gold-400">
-                      {deal.posted_as === "brand"
-                        ? t.postedAsBrand
-                        : t.postedAsCreator}
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span className="text-base font-semibold text-gold-400">
+                        {formatBudget(deal.budget_amount, t)}
+                      </span>
+                      <span className="rounded-full bg-gold-500/10 px-2 py-0.5 text-xs font-medium text-gold-400">
+                        {deal.posted_as === "brand"
+                          ? t.postedAsBrand
+                          : t.postedAsCreator}
+                      </span>
+                    </div>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                     <span>{poster?.display_name || poster?.username || "—"}</span>
@@ -121,7 +136,7 @@ export default function JobsView({
                     <span>·</span>
                     <span>{deal.created_at.slice(0, 10)}</span>
                   </div>
-                </div>
+                </Link>
               );
             })
           )}
@@ -157,6 +172,7 @@ function CreateDealModal({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [assetUrl, setAssetUrl] = useState("");
+  const [budget, setBudget] = useState("");
   const [slots, setSlots] = useState("1");
   const [postedAs, setPostedAs] = useState<PostedAs>("creator");
   const [saving, setSaving] = useState(false);
@@ -167,6 +183,7 @@ function CreateDealModal({
     setTitle("");
     setDescription("");
     setAssetUrl("");
+    setBudget("");
     setSlots("1");
     setPostedAs("creator");
     setConfirmingClear(false);
@@ -186,6 +203,7 @@ function CreateDealModal({
         title,
         description,
         external_asset_url: assetUrl || null,
+        budget_amount: budget === "" ? null : Number(budget),
         slots_total: Number(slots) || 1,
       })
       .select("*, profiles(username, display_name, avatar_url)")
@@ -206,7 +224,6 @@ function CreateDealModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-lg rounded-xl border border-gold-500/20 bg-charcoal-800 p-6 shadow-xl">
-
         <p className="mb-4 text-lg font-semibold text-ivory-100">
           {t.createButton}
         </p>
@@ -228,6 +245,18 @@ function CreateDealModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="rounded-md border border-gold-500/20 bg-navy-950/60 px-3 py-2 text-sm text-ivory-100 outline-none focus:border-gold-400"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-ivory-100">
+            {t.budgetLabel}
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={budget}
+              onChange={(e) => setBudget(e.target.value)}
+              placeholder={t.budgetNegotiable}
+              className="rounded-md border border-gold-500/20 bg-navy-950/60 px-3 py-2 text-sm text-ivory-100 outline-none placeholder:text-slate-500 focus:border-gold-400"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm text-ivory-100">

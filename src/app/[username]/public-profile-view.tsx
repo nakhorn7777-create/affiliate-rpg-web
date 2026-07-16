@@ -31,6 +31,37 @@ type AffiliateLink = {
   description: string | null;
 };
 
+type ReviewSummary = {
+  profile_id: string;
+  review_count: number;
+  average_rating: number;
+  positive_pct: number;
+} | null;
+
+type ReviewerProfile = {
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+};
+
+type RecentReview = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  profiles: ReviewerProfile | ReviewerProfile[] | null;
+};
+
+function reviewerOf(review: RecentReview): ReviewerProfile | null {
+  return Array.isArray(review.profiles)
+    ? review.profiles[0] ?? null
+    : review.profiles;
+}
+
+function stars(rating: number): string {
+  return "★".repeat(rating) + "☆".repeat(5 - rating);
+}
+
 export default function PublicProfileView({
   profile,
   links,
@@ -39,6 +70,8 @@ export default function PublicProfileView({
   isLoggedIn,
   activeSeasonId,
   alreadyFollowed,
+  reviewSummary,
+  recentReviews,
 }: {
   profile: Profile;
   links: AffiliateLink[];
@@ -47,6 +80,8 @@ export default function PublicProfileView({
   isLoggedIn: boolean;
   activeSeasonId: string | null;
   alreadyFollowed: boolean;
+  reviewSummary: ReviewSummary;
+  recentReviews: RecentReview[];
 }) {
   const [lang] = useLang();
   const t = appTranslations[lang].publicProfile;
@@ -154,6 +189,66 @@ export default function PublicProfileView({
             ))}
             {links.length === 0 && (
               <li className="text-sm text-white/40">{t.linksEmpty}</li>
+            )}
+          </ul>
+        </section>
+
+        <section>
+          <h2
+            className="mb-3 font-medium"
+            style={{ color: preset.primaryColor }}
+          >
+            {t.reviewsHeading}
+          </h2>
+          {reviewSummary ? (
+            <div className="mb-3 flex items-center gap-3 text-sm">
+              <span
+                className="text-lg font-semibold"
+                style={{ color: preset.primaryColor }}
+              >
+                {stars(Math.round(reviewSummary.average_rating))}
+              </span>
+              <span className="text-white/60">
+                {format(t.reviewsCountSuffix, {
+                  n: reviewSummary.review_count,
+                })}
+              </span>
+              <span className="text-white/60">
+                {format(t.positiveSuffix, {
+                  pct: reviewSummary.positive_pct,
+                })}
+              </span>
+            </div>
+          ) : null}
+          <ul className="flex flex-col gap-2">
+            {recentReviews.map((review) => {
+              const reviewer = reviewerOf(review);
+              return (
+                <li
+                  key={review.id}
+                  className="rounded-md border border-white/15 bg-white/5 px-3 py-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span style={{ color: preset.primaryColor }}>
+                      {stars(review.rating)}
+                    </span>
+                    <span className="text-xs text-white/40">
+                      {review.created_at.slice(0, 10)}
+                    </span>
+                  </div>
+                  {review.comment && (
+                    <p className="mt-1 text-sm text-white/70">
+                      {review.comment}
+                    </p>
+                  )}
+                  <p className="mt-1 text-xs text-white/40">
+                    {reviewer?.display_name || reviewer?.username || "—"}
+                  </p>
+                </li>
+              );
+            })}
+            {recentReviews.length === 0 && (
+              <li className="text-sm text-white/40">{t.noReviews}</li>
             )}
           </ul>
         </section>

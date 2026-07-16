@@ -20,21 +20,37 @@ export default async function PublicProfilePage({
     notFound();
   }
 
-  const [{ data: links }, { data: followerTotal }, { data: activeSeason }] =
-    await Promise.all([
-      supabase
-        .from("affiliate_links")
-        .select("*")
-        .eq("user_id", profile.id)
-        .eq("is_active", true)
-        .order("slot_number"),
-      supabase
-        .from("follower_totals")
-        .select("total_followers")
-        .eq("profile_id", profile.id)
-        .maybeSingle(),
-      supabase.from("seasons").select("*").eq("status", "active").maybeSingle(),
-    ]);
+  const [
+    { data: links },
+    { data: followerTotal },
+    { data: activeSeason },
+    { data: reviewSummary },
+    { data: recentReviews },
+  ] = await Promise.all([
+    supabase
+      .from("affiliate_links")
+      .select("*")
+      .eq("user_id", profile.id)
+      .eq("is_active", true)
+      .order("slot_number"),
+    supabase
+      .from("follower_totals")
+      .select("total_followers")
+      .eq("profile_id", profile.id)
+      .maybeSingle(),
+    supabase.from("seasons").select("*").eq("status", "active").maybeSingle(),
+    supabase
+      .from("profile_review_summary")
+      .select("*")
+      .eq("profile_id", profile.id)
+      .maybeSingle(),
+    supabase
+      .from("deal_reviews")
+      .select("id, rating, comment, created_at, profiles(username, display_name, avatar_url)")
+      .eq("reviewee_id", profile.id)
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
 
   const user = await getUser();
 
@@ -61,6 +77,8 @@ export default async function PublicProfilePage({
       isLoggedIn={!!user}
       activeSeasonId={activeSeason?.id ?? null}
       alreadyFollowed={alreadyFollowed}
+      reviewSummary={reviewSummary}
+      recentReviews={recentReviews ?? []}
     />
   );
 }
