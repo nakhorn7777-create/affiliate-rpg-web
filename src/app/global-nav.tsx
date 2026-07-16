@@ -122,6 +122,14 @@ export default function GlobalNav({ user }: { user: NavUser }) {
               {t.insights}
             </Link>
             <Link
+              href="/jobs"
+              role="menuitem"
+              onClick={closeMenu}
+              className={menuItemClass}
+            >
+              {t.jobBoard}
+            </Link>
+            <Link
               href="/dashboard"
               role="menuitem"
               onClick={closeMenu}
