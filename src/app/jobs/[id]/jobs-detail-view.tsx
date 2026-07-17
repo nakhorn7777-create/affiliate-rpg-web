@@ -10,6 +10,7 @@ import {
   posterOf,
   formatBudget,
   statusLabel,
+  categoryLabel,
   replyStatusLabel,
   type Deal,
   type Reply,
@@ -164,20 +165,28 @@ export default function JobsDetailView({
             {deal.description}
           </p>
 
-          {deal.external_asset_url && (
-            <a
-              href={deal.external_asset_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-block text-sm text-gold-400 underline"
-            >
-              {deal.external_asset_url}
-            </a>
-          )}
+          {deal.external_asset_url &&
+            (/^https?:\/\//i.test(deal.external_asset_url) ? (
+              <a
+                href={deal.external_asset_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-block text-sm text-gold-400 underline"
+              >
+                {deal.external_asset_url}
+              </a>
+            ) : (
+              <p className="mt-3 text-sm text-ivory-100/70">
+                {deal.external_asset_url}
+              </p>
+            ))}
 
           <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-400">
             <span className="rounded-full bg-gold-500/10 px-2 py-0.5 font-medium text-gold-400">
               {deal.posted_as === "brand" ? t.postedAsBrand : t.postedAsCreator}
+            </span>
+            <span className="rounded-full bg-charcoal-800 px-2 py-0.5 font-medium text-slate-300">
+              {categoryLabel(deal.category, t)}
             </span>
             <span>
               {format(t.slotsFilledSuffix, {

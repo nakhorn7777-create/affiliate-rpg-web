@@ -6,6 +6,21 @@ export type PostedAs = "brand" | "creator";
 export type DealStatus = "open" | "completed" | "cancelled";
 export type ReplyStatus = "pending" | "accepted" | "rejected";
 
+export const DEAL_CATEGORIES = [
+  "beauty",
+  "fashion",
+  "food",
+  "health",
+  "tech",
+  "home",
+  "baby",
+  "gaming",
+  "travel",
+  "other",
+] as const;
+
+export type DealCategory = (typeof DEAL_CATEGORIES)[number];
+
 export type PosterProfile = {
   username: string;
   display_name: string | null;
@@ -21,6 +36,7 @@ export type Deal = {
   external_asset_url: string | null;
   budget_amount: number | null;
   slots_total: number;
+  category: DealCategory;
   status: DealStatus;
   created_at: string;
   profiles: PosterProfile | PosterProfile[] | null;
@@ -65,6 +81,31 @@ export function formatBudget(
 ): string {
   if (amount == null) return t.budgetNegotiable;
   return `฿${amount.toLocaleString("th-TH", { maximumFractionDigits: 0 })}`;
+}
+
+export function categoryLabel(category: DealCategory, t: JobsT): string {
+  switch (category) {
+    case "beauty":
+      return t.categoryBeauty;
+    case "fashion":
+      return t.categoryFashion;
+    case "food":
+      return t.categoryFood;
+    case "health":
+      return t.categoryHealth;
+    case "tech":
+      return t.categoryTech;
+    case "home":
+      return t.categoryHome;
+    case "baby":
+      return t.categoryBaby;
+    case "gaming":
+      return t.categoryGaming;
+    case "travel":
+      return t.categoryTravel;
+    case "other":
+      return t.categoryOther;
+  }
 }
 
 export function statusLabel(status: DealStatus, t: JobsT): string {
