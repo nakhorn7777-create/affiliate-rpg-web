@@ -106,6 +106,14 @@ export default function GlobalNav({ user }: { user: NavUser }) {
               {t.viewProfile}
             </Link>
             <Link
+              href="/academy"
+              role="menuitem"
+              onClick={closeMenu}
+              className={menuItemClass}
+            >
+              {t.academy}
+            </Link>
+            <Link
               href="/stats"
               role="menuitem"
               onClick={closeMenu}
