@@ -2,6 +2,7 @@
 
 import AccountSettingsForm from "./account-settings-form";
 import AffiliateLinksManager from "./affiliate-links-manager";
+import BrandModeToggle from "./brand-mode-toggle";
 import { useLang } from "@/lib/lang/use-lang";
 import { appTranslations } from "@/lib/lang/app-translations";
 
@@ -15,6 +16,7 @@ type Profile = {
   facebook_url: string | null;
   instagram_url: string | null;
   theme_preset: string | null;
+  has_brand: boolean;
 };
 
 type AffiliateLink = {
@@ -45,6 +47,8 @@ export default function DashboardView({
       <h1 className="text-2xl font-semibold">{t.title}</h1>
 
       <AccountSettingsForm profile={profile} />
+
+      <BrandModeToggle initialHasBrand={profile?.has_brand ?? false} />
 
       <section>
         <h2 className="mb-3 font-medium">{t.affiliateLinksHeading}</h2>

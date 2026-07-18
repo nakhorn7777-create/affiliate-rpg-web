@@ -24,6 +24,12 @@ export const appTranslations = {
       saveButton: "บันทึกการตั้งค่า",
       saving: "กำลังบันทึก...",
       saveSuccess: "บันทึกการตั้งค่าแล้ว",
+      brandModeHeading: "โหมดแบรนด์",
+      brandModeDescription:
+        "เปิดโหมดนี้เพื่อโพสต์งานจ้างในฐานะแบรนด์บนกระดานงานจ้าง สลับกลับเป็นโหมดครีเอเตอร์ได้ทุกเมื่อ",
+      brandModeCreator: "โหมดครีเอเตอร์",
+      brandModeBrand: "โหมดแบรนด์",
+      brandModeToggleError: "สลับโหมดไม่สำเร็จ ลองใหม่อีกครั้ง",
     },
     theme: {
       selected: "กำลังใช้งาน",
@@ -292,6 +298,12 @@ export const appTranslations = {
       saveButton: "Save settings",
       saving: "Saving...",
       saveSuccess: "Settings saved",
+      brandModeHeading: "Brand Mode",
+      brandModeDescription:
+        "Turn this on to post jobs as a Brand on the Job Board. Switch back to Creator Mode anytime.",
+      brandModeCreator: "Creator Mode",
+      brandModeBrand: "Brand Mode",
+      brandModeToggleError: "Couldn't switch mode. Please try again.",
     },
     theme: {
       selected: "Currently active",
