@@ -48,7 +48,7 @@ function VerifiedBadge({ label }: { label: string }) {
   );
 }
 
-function BrandStatusIndicator({
+export function BrandStatusIndicator({
   isOfficialBrand,
   brandStatus,
   t,
