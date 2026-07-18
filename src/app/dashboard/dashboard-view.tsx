@@ -5,6 +5,7 @@ import AccountSettingsForm from "./account-settings-form";
 import AffiliateLinksManager from "./affiliate-links-manager";
 import BrandModeToggle from "./brand-mode-toggle";
 import BrandInfoForm from "./brand-info-form";
+import ProfileContactForm from "./profile-contact-form";
 import { useLang } from "@/lib/lang/use-lang";
 import { appTranslations } from "@/lib/lang/app-translations";
 
@@ -34,14 +35,22 @@ type AffiliateLink = {
   click_count: number;
 };
 
+type Contact = {
+  contact_email: string | null;
+  contact_line_id: string | null;
+  contact_facebook: string | null;
+};
+
 export default function DashboardView({
   profile,
   links,
   maxSlots,
+  contact,
 }: {
   profile: Profile | null;
   links: AffiliateLink[];
   maxSlots: number;
+  contact: Contact | null;
 }) {
   const [lang] = useLang();
   const t = appTranslations[lang].dashboard;
@@ -52,6 +61,15 @@ export default function DashboardView({
       <h1 className="text-2xl font-semibold">{t.title}</h1>
 
       <AccountSettingsForm profile={profile} />
+
+      {profile && (
+        <ProfileContactForm
+          profileId={profile.id}
+          initialContactEmail={contact?.contact_email ?? null}
+          initialContactLineId={contact?.contact_line_id ?? null}
+          initialContactFacebook={contact?.contact_facebook ?? null}
+        />
+      )}
 
       <div className="flex flex-col gap-4">
         <BrandModeToggle hasBrand={hasBrand} onToggled={setHasBrand} />
