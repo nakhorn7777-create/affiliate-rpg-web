@@ -1,11 +1,12 @@
 -- ============================================================
 -- Schema v2: Affiliate Profile + RPG Game (Supabase / PostgreSQL)
 --
--- เก็บไว้อ่านอ้างอิงเท่านั้น — เนื้อหานี้ถูก formalize เข้าระบบ
--- tracking จริงแล้วที่ supabase/migrations/0000_baseline_schema_v2.sql
--- ถ้าจะ bootstrap โปรเจกต์ใหม่ (เช่น test project) ให้ใช้
--- `supabase db push` จากโฟลเดอร์ migrations/ ตามลำดับเลขตามปกติ
--- ไม่ต้องรันไฟล์นี้ตรงๆ อีกต่อไป
+-- นี่คือ migration 0000 — baseline schema ที่เคยรันด้วยมือผ่าน
+-- Supabase Studio SQL Editor เท่านั้น (ไม่เคยอยู่ใน supabase/migrations/
+-- มาก่อน) ตอนนี้ formalize เข้าระบบ tracking ของ `supabase db push`
+-- แล้ว เพื่อให้ bootstrap โปรเจกต์ใหม่ (เช่น test project) จากศูนย์ได้
+-- ครบจริง เนื้อหาเหมือนกับ supabase/schema_v2.sql เป๊ะ (ไฟล์นั้นยังเก็บ
+-- ไว้อ่านอ้างอิงคู่กัน ไม่ได้ลบทิ้ง)
 -- ============================================================
 
 create extension if not exists "uuid-ossp";
