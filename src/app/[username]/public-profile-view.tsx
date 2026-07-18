@@ -22,6 +22,9 @@ type Profile = {
   facebook_url: string | null;
   instagram_url: string | null;
   theme_preset: string | null;
+  has_brand: boolean;
+  brand_name: string | null;
+  is_official_brand: boolean;
 };
 
 type AffiliateLink = {
@@ -60,6 +63,25 @@ function reviewerOf(review: RecentReview): ReviewerProfile | null {
 
 function stars(rating: number): string {
   return "★".repeat(rating) + "☆".repeat(5 - rating);
+}
+
+function VerifiedBadge({ label }: { label: string }) {
+  return (
+    <span
+      title={label}
+      className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-gold-500 text-navy-950"
+    >
+      <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
+        <path
+          d="M4 10.5L8 14.5L16 6"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  );
 }
 
 export default function PublicProfileView({
@@ -117,6 +139,16 @@ export default function PublicProfileView({
               {profile.display_name || profile.username}
             </h1>
             <p className="text-sm text-white/60">@{profile.username}</p>
+            {profile.has_brand && profile.brand_name && (
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-white/70">
+                <span>
+                  {t.brandLabel}: {profile.brand_name}
+                </span>
+                {profile.is_official_brand && (
+                  <VerifiedBadge label={t.verifiedBrandLabel} />
+                )}
+              </p>
+            )}
           </div>
         </div>
 

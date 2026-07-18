@@ -22,20 +22,89 @@ function stars(rating: number): string {
   return "★".repeat(rating) + "☆".repeat(5 - rating);
 }
 
+type MatchedContact = {
+  counterpart_user_id: string;
+  contact_email: string | null;
+  contact_line_id: string | null;
+  contact_facebook: string | null;
+};
+
+function VerifiedBadge({ label }: { label: string }) {
+  return (
+    <span
+      title={label}
+      className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-gold-500 text-navy-950"
+    >
+      <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
+        <path
+          d="M4 10.5L8 14.5L16 6"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  );
+}
+
+function ContactRevealCard({
+  contact,
+  t,
+}: {
+  contact: MatchedContact;
+  t: JobsT;
+}) {
+  const hasAny =
+    contact.contact_email || contact.contact_line_id || contact.contact_facebook;
+  if (!hasAny) return null;
+
+  return (
+    <div className="mt-3 rounded-md border border-gold-500/20 bg-navy-950/40 p-3">
+      <p className="text-xs font-medium text-slate-400">
+        {t.contactRevealHeading}
+      </p>
+      <div className="mt-1 flex flex-col gap-0.5 text-sm text-ivory-100/90">
+        {contact.contact_email && (
+          <p>
+            {t.contactEmailLabel}: {contact.contact_email}
+          </p>
+        )}
+        {contact.contact_line_id && (
+          <p>
+            {t.contactLineIdLabel}: {contact.contact_line_id}
+          </p>
+        )}
+        {contact.contact_facebook && (
+          <p>
+            {t.contactFacebookLabel}: {contact.contact_facebook}
+          </p>
+        )}
+      </div>
+      <p className="mt-2 text-xs text-slate-500">
+        {t.contactRevealDisclaimer}
+      </p>
+    </div>
+  );
+}
+
 export default function JobsDetailView({
   userId,
   deal: initialDeal,
   initialReplies,
   initialReviews,
+  initialMatchedContacts,
 }: {
   userId: string | null;
   deal: Deal;
   initialReplies: Reply[];
   initialReviews: Review[];
+  initialMatchedContacts: MatchedContact[];
 }) {
   const [deal, setDeal] = useState(initialDeal);
   const [replies, setReplies] = useState(initialReplies);
   const [reviews, setReviews] = useState(initialReviews);
+  const [matchedContacts] = useState(initialMatchedContacts);
   const [message, setMessage] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
   const [replyError, setReplyError] = useState<string | null>(null);
@@ -61,6 +130,13 @@ export default function JobsDetailView({
     return reviews.find((r) => r.reviewee_id === revieweeId) ?? null;
   }
 
+  function contactFor(counterpartId: string): MatchedContact | null {
+    return (
+      matchedContacts.find((c) => c.counterpart_user_id === counterpartId) ??
+      null
+    );
+  }
+
   function handleReviewSubmitted(review: Review) {
     setReviews((prev) => [...prev, review]);
     setReviewingId(null);
@@ -76,7 +152,7 @@ export default function JobsDetailView({
     const { data, error } = await supabase
       .from("deal_replies")
       .insert({ deal_id: deal.id, applicant_id: userId, message })
-      .select("*, profiles(username, display_name, avatar_url)")
+      .select("*, profiles(username, display_name, avatar_url, is_official_brand)")
       .single();
 
     setSubmittingReply(false);
@@ -180,9 +256,14 @@ export default function JobsDetailView({
               <h1 className="text-xl font-semibold text-ivory-100">
                 {deal.title}
               </h1>
-              <p className="mt-1 text-sm text-slate-400">
-                {poster?.display_name || poster?.username || "—"} ·{" "}
-                {deal.created_at.slice(0, 10)}
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-400">
+                <span>
+                  {poster?.display_name || poster?.username || "—"} ·{" "}
+                  {deal.created_at.slice(0, 10)}
+                </span>
+                {poster?.is_official_brand && (
+                  <VerifiedBadge label={t.verifiedBrandLabel} />
+                )}
               </p>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
@@ -372,6 +453,21 @@ export default function JobsDetailView({
                         </button>
                       </div>
                     )}
+
+                    {reply.status === "accepted" &&
+                      (() => {
+                        const counterpartId = isOwner
+                          ? reply.applicant_id
+                          : reply.applicant_id === userId
+                            ? deal.posted_by
+                            : null;
+                        const contact = counterpartId
+                          ? contactFor(counterpartId)
+                          : null;
+                        return (
+                          contact && <ContactRevealCard contact={contact} t={t} />
+                        );
+                      })()}
 
                     {reply.status === "accepted" &&
                       (() => {

@@ -11,19 +11,22 @@ export default async function JobDetailPage({
   const user = await getUser();
   const supabase = await createClient();
 
-  const [{ data: deal }, { data: replies }, { data: reviews }] =
+  const [{ data: deal }, { data: replies }, { data: reviews }, { data: matchedContacts }] =
     await Promise.all([
       supabase
         .from("brand_deals")
-        .select("*, profiles(username, display_name, avatar_url)")
+        .select("*, profiles(username, display_name, avatar_url, is_official_brand)")
         .eq("id", id)
         .maybeSingle(),
       supabase
         .from("deal_replies")
-        .select("*, profiles(username, display_name, avatar_url)")
+        .select("*, profiles(username, display_name, avatar_url, is_official_brand)")
         .eq("deal_id", id)
         .order("created_at", { ascending: true }),
       supabase.from("deal_reviews").select("*").eq("deal_id", id),
+      user
+        ? supabase.rpc("get_matched_contact", { p_deal_id: id })
+        : Promise.resolve({ data: null }),
     ]);
 
   if (!deal) {
@@ -36,6 +39,7 @@ export default async function JobDetailPage({
       deal={deal}
       initialReplies={replies ?? []}
       initialReviews={reviews ?? []}
+      initialMatchedContacts={matchedContacts ?? []}
     />
   );
 }
