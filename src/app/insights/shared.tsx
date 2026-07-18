@@ -257,7 +257,7 @@ export function ContentEntryModal({
     if (saveError) {
       setError(t.saveError);
     } else if (data) {
-      onSaved(data);
+      onSaved(data as ContentStat);
     }
   }
 
@@ -388,7 +388,7 @@ export function CommerceEntryModal({
     if (saveError) {
       setError(t.saveError);
     } else if (data) {
-      onSaved(data);
+      onSaved(data as CommerceStat);
     }
   }
 

@@ -2,7 +2,12 @@ import { notFound, redirect } from "next/navigation";
 import { createClient, getUser } from "@/lib/supabase/server";
 import ContentPlatformView from "./content-platform-view";
 import CommercePlatformView from "./commerce-platform-view";
-import type { ContentPlatform, CommercePlatform } from "../shared";
+import type {
+  ContentPlatform,
+  CommercePlatform,
+  ContentStat,
+  CommerceStat,
+} from "../shared";
 
 const CONTENT_PLATFORMS = ["facebook", "tiktok"] as const;
 const COMMERCE_PLATFORMS = ["shopee", "lazada"] as const;
@@ -40,7 +45,7 @@ export default async function PlatformInsightsPage({
       <ContentPlatformView
         userId={user.id}
         platform={platform}
-        stats={data ?? []}
+        stats={(data ?? []) as ContentStat[]}
       />
     );
   }
@@ -57,7 +62,7 @@ export default async function PlatformInsightsPage({
       <CommercePlatformView
         userId={user.id}
         platform={platform}
-        stats={data ?? []}
+        stats={(data ?? []) as CommerceStat[]}
       />
     );
   }

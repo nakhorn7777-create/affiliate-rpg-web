@@ -9,7 +9,7 @@ import ProfileContactForm from "./profile-contact-form";
 import { useLang } from "@/lib/lang/use-lang";
 import { appTranslations } from "@/lib/lang/app-translations";
 
-type Profile = {
+export type Profile = {
   id: string;
   username: string;
   display_name: string | null;

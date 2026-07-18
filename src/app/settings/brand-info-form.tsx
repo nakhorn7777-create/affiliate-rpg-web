@@ -31,8 +31,8 @@ export default function BrandInfoForm({
 
     const supabase = createClient();
     const { error } = await supabase.rpc("resubmit_brand_info", {
-      p_brand_name: brandName || null,
-      p_brand_website: brandWebsite || null,
+      p_brand_name: brandName,
+      p_brand_website: brandWebsite,
     });
 
     setSaving(false);

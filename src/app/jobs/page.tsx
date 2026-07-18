@@ -1,12 +1,13 @@
 import { createClient, getUser } from "@/lib/supabase/server";
 import JobsView from "./jobs-view";
+import type { Deal } from "./shared";
 
 export default async function JobsPage() {
   const user = await getUser();
   const supabase = await createClient();
 
   const dealColumns =
-    "*, profiles(username, display_name, avatar_url), deal_replies(count)";
+    "*, profiles(username, display_name, avatar_url, is_official_brand, brand_status), deal_replies(count)";
 
   const [{ data: deals }, myDealsResult] = await Promise.all([
     supabase
@@ -39,8 +40,8 @@ export default async function JobsPage() {
     <JobsView
       userId={user?.id ?? null}
       hasBrand={hasBrand}
-      initialDeals={deals ?? []}
-      initialMyDeals={myDealsResult.data ?? []}
+      initialDeals={(deals ?? []) as Deal[]}
+      initialMyDeals={(myDealsResult.data ?? []) as Deal[]}
     />
   );
 }

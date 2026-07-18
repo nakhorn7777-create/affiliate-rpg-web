@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Claude Code local settings (machine-specific)
 .claude/settings.local.json
+
+# Supabase CLI local state (project ref, pooler URL — machine-specific)
+supabase/.temp/

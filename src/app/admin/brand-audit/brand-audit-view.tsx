@@ -7,7 +7,7 @@ import { appTranslations } from "@/lib/lang/app-translations";
 
 type BrandStatus = "pending" | "processing" | "rejected";
 
-type BrandProfile = {
+export type BrandProfile = {
   id: string;
   username: string;
   display_name: string | null;

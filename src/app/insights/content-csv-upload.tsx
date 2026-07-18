@@ -224,7 +224,7 @@ export default function ContentCsvUpload({
       setImportError(t.saveError);
       return;
     }
-    onImported(data ?? []);
+    onImported((data ?? []) as ContentStat[]);
     reset();
   }
 

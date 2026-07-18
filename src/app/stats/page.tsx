@@ -17,7 +17,7 @@ export default async function StatsPage() {
     .eq("status", "active")
     .maybeSingle();
 
-  let gameStats: { currency: number; tier: string; level: number } | null =
+  let gameStats: { currency: number; tier: string | null; level: number } | null =
     null;
   if (activeSeason) {
     const { data } = await supabase
@@ -37,7 +37,7 @@ export default async function StatsPage() {
           kind: "active",
           seasonNumber: activeSeason.season_number,
           currency: gameStats.currency,
-          tier: gameStats.tier,
+          tier: gameStats.tier ?? "copper",
           level: gameStats.level,
         };
 

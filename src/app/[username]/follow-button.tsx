@@ -41,7 +41,7 @@ export default function FollowButton({
     const { error: insertError } = await supabase.from("followers").insert({
       follower_id: user.id,
       following_id: followingId,
-      season_id: activeSeasonId,
+      season_id: activeSeasonId!,
     });
 
     setLoading(false);

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient, getUser } from "@/lib/supabase/server";
 import JobsDetailView from "./jobs-detail-view";
+import type { Deal, Reply } from "../shared";
 
 export default async function JobDetailPage({
   params,
@@ -15,7 +16,9 @@ export default async function JobDetailPage({
     await Promise.all([
       supabase
         .from("brand_deals")
-        .select("*, profiles(username, display_name, avatar_url, is_official_brand, brand_status)")
+        .select(
+          "*, deal_replies(count), profiles(username, display_name, avatar_url, is_official_brand, brand_status)"
+        )
         .eq("id", id)
         .maybeSingle(),
       supabase
@@ -36,8 +39,8 @@ export default async function JobDetailPage({
   return (
     <JobsDetailView
       userId={user?.id ?? null}
-      deal={deal}
-      initialReplies={replies ?? []}
+      deal={deal as Deal}
+      initialReplies={(replies ?? []) as Reply[]}
       initialReviews={reviews ?? []}
       initialMatchedContacts={matchedContacts ?? []}
     />

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient, getUser } from "@/lib/supabase/server";
 import SummaryView from "./summary-view";
+import type { ContentStat, CommerceStat } from "./shared";
 
 function isoDate(d: Date) {
   return d.toISOString().slice(0, 10);
@@ -36,8 +37,8 @@ export default async function InsightsSummaryPage() {
 
   return (
     <SummaryView
-      contentStats={contentStats ?? []}
-      commerceStats={commerceStats ?? []}
+      contentStats={(contentStats ?? []) as ContentStat[]}
+      commerceStats={(commerceStats ?? []) as CommerceStat[]}
     />
   );
 }

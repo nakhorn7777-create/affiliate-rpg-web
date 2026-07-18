@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient, getUser } from "@/lib/supabase/server";
 import SettingsView from "./settings-view";
+import type { Profile } from "./settings-view";
 
 export default async function SettingsPage() {
   const user = await getUser();
@@ -32,7 +33,7 @@ export default async function SettingsPage() {
 
   return (
     <SettingsView
-      profile={profile}
+      profile={profile as Profile | null}
       links={links ?? []}
       maxSlots={maxSlots ?? 10}
       contact={contact}

@@ -59,7 +59,7 @@ export default async function GamePage() {
         currency: gameStats.currency,
         level: gameStats.level,
         xp: gameStats.xp,
-        tier: gameStats.tier,
+        tier: gameStats.tier ?? "copper",
         totalLoginDays: gameStats.total_login_days,
       }}
       inventory={(inventory ?? []).map((entry) => ({

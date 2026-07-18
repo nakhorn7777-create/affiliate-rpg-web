@@ -12,7 +12,7 @@ const pixelifySans = Pixelify_Sans({
   weight: ["600", "700"],
 });
 
-type Profile = {
+export type Profile = {
   id: string;
   username: string;
   display_name: string | null;
@@ -35,11 +35,11 @@ type AffiliateLink = {
   description: string | null;
 };
 
-type ReviewSummary = {
-  profile_id: string;
-  review_count: number;
-  average_rating: number;
-  positive_pct: number;
+export type ReviewSummary = {
+  profile_id: string | null;
+  review_count: number | null;
+  average_rating: number | null;
+  positive_pct: number | null;
 } | null;
 
 type ReviewerProfile = {
@@ -260,16 +260,16 @@ export default function PublicProfileView({
                 className="text-lg font-semibold"
                 style={{ color: preset.primaryColor }}
               >
-                {stars(Math.round(reviewSummary.average_rating))}
+                {stars(Math.round(reviewSummary.average_rating ?? 0))}
               </span>
               <span className="text-white/60">
                 {format(t.reviewsCountSuffix, {
-                  n: reviewSummary.review_count,
+                  n: reviewSummary.review_count ?? 0,
                 })}
               </span>
               <span className="text-white/60">
                 {format(t.positiveSuffix, {
-                  pct: reviewSummary.positive_pct,
+                  pct: reviewSummary.positive_pct ?? 0,
                 })}
               </span>
             </div>

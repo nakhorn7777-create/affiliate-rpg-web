@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient, getUser } from "@/lib/supabase/server";
 import PublicProfileView from "./public-profile-view";
+import type { Profile } from "./public-profile-view";
 
 export default async function PublicProfilePage({
   params,
@@ -46,7 +47,9 @@ export default async function PublicProfilePage({
       .maybeSingle(),
     supabase
       .from("deal_reviews")
-      .select("id, rating, comment, created_at, profiles(username, display_name, avatar_url)")
+      .select(
+        "id, rating, comment, created_at, profiles!deal_reviews_reviewer_id_fkey(username, display_name, avatar_url)"
+      )
       .eq("reviewee_id", profile.id)
       .order("created_at", { ascending: false })
       .limit(5),
@@ -70,7 +73,7 @@ export default async function PublicProfilePage({
 
   return (
     <PublicProfileView
-      profile={profile}
+      profile={profile as Profile}
       links={links ?? []}
       followerCount={followerTotal?.total_followers ?? 0}
       isOwnProfile={isOwnProfile}

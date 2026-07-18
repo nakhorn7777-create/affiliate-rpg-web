@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient, getUser } from "@/lib/supabase/server";
 import BrandAuditView from "./brand-audit-view";
+import type { BrandProfile } from "./brand-audit-view";
 
 export default async function BrandAuditPage() {
   const user = await getUser();
@@ -29,5 +30,7 @@ export default async function BrandAuditPage() {
     .eq("has_brand", true)
     .order("brand_status");
 
-  return <BrandAuditView initialProfiles={brandProfiles ?? []} />;
+  return (
+    <BrandAuditView initialProfiles={(brandProfiles ?? []) as BrandProfile[]} />
+  );
 }

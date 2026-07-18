@@ -628,7 +628,7 @@ function ReviewForm({
       p_deal_id: dealId,
       p_reviewee_id: revieweeId,
       p_rating: rating,
-      p_comment: comment || null,
+      p_comment: comment || undefined,
     });
 
     setSubmitting(false);
