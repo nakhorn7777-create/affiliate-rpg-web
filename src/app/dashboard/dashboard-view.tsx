@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import AccountSettingsForm from "./account-settings-form";
 import AffiliateLinksManager from "./affiliate-links-manager";
 import BrandModeToggle from "./brand-mode-toggle";
+import BrandInfoForm from "./brand-info-form";
 import { useLang } from "@/lib/lang/use-lang";
 import { appTranslations } from "@/lib/lang/app-translations";
 
@@ -17,6 +19,8 @@ type Profile = {
   instagram_url: string | null;
   theme_preset: string | null;
   has_brand: boolean;
+  brand_name: string | null;
+  brand_website: string | null;
 };
 
 type AffiliateLink = {
@@ -41,6 +45,7 @@ export default function DashboardView({
 }) {
   const [lang] = useLang();
   const t = appTranslations[lang].dashboard;
+  const [hasBrand, setHasBrand] = useState(profile?.has_brand ?? false);
 
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-10 p-8">
@@ -48,7 +53,16 @@ export default function DashboardView({
 
       <AccountSettingsForm profile={profile} />
 
-      <BrandModeToggle initialHasBrand={profile?.has_brand ?? false} />
+      <div className="flex flex-col gap-4">
+        <BrandModeToggle hasBrand={hasBrand} onToggled={setHasBrand} />
+        {hasBrand && profile && (
+          <BrandInfoForm
+            profileId={profile.id}
+            initialBrandName={profile.brand_name}
+            initialBrandWebsite={profile.brand_website}
+          />
+        )}
+      </div>
 
       <section>
         <h2 className="mb-3 font-medium">{t.affiliateLinksHeading}</h2>

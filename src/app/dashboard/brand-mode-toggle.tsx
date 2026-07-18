@@ -6,11 +6,12 @@ import { useLang } from "@/lib/lang/use-lang";
 import { appTranslations } from "@/lib/lang/app-translations";
 
 export default function BrandModeToggle({
-  initialHasBrand,
+  hasBrand,
+  onToggled,
 }: {
-  initialHasBrand: boolean;
+  hasBrand: boolean;
+  onToggled: (next: boolean) => void;
 }) {
-  const [hasBrand, setHasBrand] = useState(initialHasBrand);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lang] = useLang();
@@ -30,7 +31,7 @@ export default function BrandModeToggle({
       setError(t.brandModeToggleError);
       return;
     }
-    setHasBrand(Boolean(data));
+    onToggled(Boolean(data));
   }
 
   return (
