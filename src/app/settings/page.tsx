@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient, getUser } from "@/lib/supabase/server";
-import DashboardView from "./dashboard-view";
+import SettingsView from "./settings-view";
 
-export default async function DashboardPage() {
+export default async function SettingsPage() {
   const user = await getUser();
 
   if (!user) {
@@ -31,7 +31,7 @@ export default async function DashboardPage() {
   });
 
   return (
-    <DashboardView
+    <SettingsView
       profile={profile}
       links={links ?? []}
       maxSlots={maxSlots ?? 10}

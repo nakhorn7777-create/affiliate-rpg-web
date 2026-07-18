@@ -15,7 +15,7 @@ export default function BrandModeToggle({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lang] = useLang();
-  const t = appTranslations[lang].dashboard;
+  const t = appTranslations[lang].settings;
 
   async function handleToggle() {
     setLoading(true);

@@ -28,7 +28,7 @@ export default function ProfileContactForm({
     { type: "success" | "error"; text: string } | null
   >(null);
   const [lang] = useLang();
-  const t = appTranslations[lang].dashboard;
+  const t = appTranslations[lang].settings;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

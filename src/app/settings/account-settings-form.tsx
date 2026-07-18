@@ -42,7 +42,7 @@ export default function AccountSettingsForm({
   >(null);
   const [lang] = useLang();
   const tField = appTranslations[lang].profileForm;
-  const tDash = appTranslations[lang].dashboard;
+  const tSettings = appTranslations[lang].settings;
 
   const supabase = createClient();
 
@@ -79,7 +79,7 @@ export default function AccountSettingsForm({
           : error.message,
       });
     } else {
-      setMessage({ type: "success", text: tDash.saveSuccess });
+      setMessage({ type: "success", text: tSettings.saveSuccess });
     }
   }
 
@@ -90,7 +90,7 @@ export default function AccountSettingsForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-8">
       <div className="flex flex-col gap-3">
-        <h2 className="font-medium">{tDash.profileInfoHeading}</h2>
+        <h2 className="font-medium">{tSettings.profileInfoHeading}</h2>
         <label className="flex flex-col gap-1 text-sm">
           {tField.username}
           <input
@@ -152,7 +152,7 @@ export default function AccountSettingsForm({
       </div>
 
       <div>
-        <h2 className="mb-3 font-medium">{tDash.themeHeading}</h2>
+        <h2 className="mb-3 font-medium">{tSettings.themeHeading}</h2>
         <ThemePicker selected={themePreset} onSelect={setThemePreset} />
       </div>
 
@@ -162,7 +162,7 @@ export default function AccountSettingsForm({
           disabled={saving}
           className="w-fit rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
-          {saving ? tDash.saving : tDash.saveButton}
+          {saving ? tSettings.saving : tSettings.saveButton}
         </button>
 
         {message && (

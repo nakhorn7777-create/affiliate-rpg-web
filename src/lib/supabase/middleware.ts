@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Single source of truth for which routes require a signed-in user.
 // Add new protected sections here — everything else stays public by default.
-const PROTECTED_PREFIXES = ["/dashboard", "/game", "/stats", "/insights"];
+const PROTECTED_PREFIXES = ["/settings", "/game", "/stats", "/insights"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });

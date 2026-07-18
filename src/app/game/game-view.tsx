@@ -24,8 +24,8 @@ export default function GameView(props: GameViewProps) {
   if (props.status === "no-season") {
     return (
       <main className="mx-auto flex max-w-2xl flex-col gap-4 p-8">
-        <Link href="/dashboard" className="text-sm text-blue-600 underline">
-          {t.backToDashboard}
+        <Link href="/settings" className="text-sm text-blue-600 underline">
+          {t.backToSettings}
         </Link>
         <p className="text-sm text-neutral-500">{t.noSeason}</p>
       </main>
@@ -35,8 +35,8 @@ export default function GameView(props: GameViewProps) {
   if (props.status === "no-stats") {
     return (
       <main className="mx-auto flex max-w-2xl flex-col gap-4 p-8">
-        <Link href="/dashboard" className="text-sm text-blue-600 underline">
-          {t.backToDashboard}
+        <Link href="/settings" className="text-sm text-blue-600 underline">
+          {t.backToSettings}
         </Link>
         <p className="text-sm text-red-600">{t.noStats}</p>
       </main>
@@ -47,8 +47,8 @@ export default function GameView(props: GameViewProps) {
     <main className="mx-auto flex max-w-4xl flex-col items-center gap-4 p-8">
       <div className="flex w-full max-w-[800px] items-center justify-between">
         <h1 className="text-xl font-semibold">{t.heading}</h1>
-        <Link href="/dashboard" className="text-sm text-blue-600 underline">
-          {t.backToDashboard}
+        <Link href="/settings" className="text-sm text-blue-600 underline">
+          {t.backToSettings}
         </Link>
       </div>
 

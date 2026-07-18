@@ -16,8 +16,12 @@ export const appTranslations = {
       langTh: "ภาษาไทย",
       langEn: "English",
     },
-    dashboard: {
+    settings: {
       title: "ตั้งค่าบัญชี",
+      tabGeneral: "ข้อมูลทั่วไป",
+      tabContact: "ช่องทางติดต่อ",
+      tabBrand: "โหมดแบรนด์",
+      tabAffiliateLinks: "ลิงก์แอฟฟิลิเอต",
       profileInfoHeading: "ข้อมูลโปรไฟล์",
       affiliateLinksHeading: "ลิงก์ Affiliate",
       themeHeading: "ธีมโปรไฟล์",
@@ -101,7 +105,7 @@ export const appTranslations = {
       loginSuffix: "เพื่อ follow",
     },
     game: {
-      backToDashboard: "กลับแดชบอร์ด",
+      backToSettings: "กลับหน้าตั้งค่าบัญชี",
       heading: "โลกเกม",
       noSeason: "ยังไม่มีซีซั่นที่เปิดใช้งานอยู่ตอนนี้ ยังเข้าเกมไม่ได้",
       noStats: "ไม่พบข้อมูลผู้เล่นในซีซั่นนี้ ลองรีเฟรชหน้าอีกครั้ง",
@@ -324,8 +328,12 @@ export const appTranslations = {
       langTh: "ภาษาไทย",
       langEn: "English",
     },
-    dashboard: {
+    settings: {
       title: "Account Settings",
+      tabGeneral: "General",
+      tabContact: "Contact",
+      tabBrand: "Brand Settings",
+      tabAffiliateLinks: "Affiliate Links",
       profileInfoHeading: "Profile info",
       affiliateLinksHeading: "Affiliate links",
       themeHeading: "Profile theme",
@@ -409,7 +417,7 @@ export const appTranslations = {
       loginSuffix: "to follow",
     },
     game: {
-      backToDashboard: "Back to dashboard",
+      backToSettings: "Back to Settings",
       heading: "Game world",
       noSeason: "There's no active season right now — the game isn't open yet",
       noStats: "No player data found for this season — try refreshing the page",

@@ -138,7 +138,7 @@ export default function GlobalNav({ user }: { user: NavUser }) {
               {t.jobBoard}
             </Link>
             <Link
-              href="/dashboard"
+              href="/settings"
               role="menuitem"
               onClick={closeMenu}
               className={menuItemClass}

@@ -14,7 +14,7 @@ export default async function Home() {
       .eq("id", user.id)
       .maybeSingle();
 
-    redirect(ownProfile?.username ? `/${ownProfile.username}` : "/dashboard");
+    redirect(ownProfile?.username ? `/${ownProfile.username}` : "/settings");
   }
 
   const { data: lastEndedSeason } = await supabase

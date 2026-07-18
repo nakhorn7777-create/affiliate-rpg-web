@@ -32,7 +32,7 @@ type AcademyViewProps = {
 };
 
 type Copy = {
-  backToDashboard: string;
+  backToSettings: string;
   heading: string;
   subheading: string;
   progressLabel: (done: number, total: number) => string;
@@ -46,7 +46,7 @@ type Copy = {
 
 const copy: Record<"th" | "en", Copy> = {
   th: {
-    backToDashboard: "กลับหน้าแดชบอร์ด",
+    backToSettings: "กลับหน้าตั้งค่าบัญชี",
     heading: "Novice Academy",
     subheading: "ภารกิจสอนงานสำหรับมือใหม่ ทำครั้งเดียวได้รางวัลถาวร",
     progressLabel: (done: number, total: number) =>
@@ -59,7 +59,7 @@ const copy: Record<"th" | "en", Copy> = {
     toastClose: "ปิด",
   },
   en: {
-    backToDashboard: "Back to dashboard",
+    backToSettings: "Back to Settings",
     heading: "Novice Academy",
     subheading: "Beginner onboarding quests — complete once for a permanent reward",
     progressLabel: (done: number, total: number) =>
@@ -134,10 +134,10 @@ export default function AcademyView({ quests, justCompleted }: AcademyViewProps)
             {t.heading}
           </h1>
           <Link
-            href="/dashboard"
+            href="/settings"
             className="text-sm text-gold-500 underline-offset-4 hover:underline"
           >
-            {t.backToDashboard}
+            {t.backToSettings}
           </Link>
         </div>
 
