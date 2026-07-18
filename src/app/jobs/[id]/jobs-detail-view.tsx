@@ -41,9 +41,14 @@ export default function JobsDetailView({
   const [replyError, setReplyError] = useState<string | null>(null);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [acceptError, setAcceptError] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectError, setRejectError] = useState<string | null>(null);
   const [confirmingComplete, setConfirmingComplete] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [completeError, setCompleteError] = useState<string | null>(null);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [lang] = useLang();
   const t = appTranslations[lang].jobs;
@@ -104,6 +109,25 @@ export default function JobsDetailView({
     );
   }
 
+  async function handleReject(replyId: string) {
+    setRejectingId(replyId);
+    setRejectError(null);
+
+    const supabase = createClient();
+    const { error } = await supabase.rpc("reject_deal_reply", {
+      p_reply_id: replyId,
+    });
+
+    setRejectingId(null);
+    if (error) {
+      setRejectError(error.message || t.rejectError);
+      return;
+    }
+    setReplies((prev) =>
+      prev.map((r) => (r.id === replyId ? { ...r, status: "rejected" } : r))
+    );
+  }
+
   async function handleComplete() {
     setCompleting(true);
     setCompleteError(null);
@@ -120,6 +144,24 @@ export default function JobsDetailView({
     }
     setDeal((prev) => ({ ...prev, status: "completed" }));
     setConfirmingComplete(false);
+  }
+
+  async function handleCancel() {
+    setCancelling(true);
+    setCancelError(null);
+
+    const supabase = createClient();
+    const { error } = await supabase.rpc("cancel_brand_deal", {
+      p_deal_id: deal.id,
+    });
+
+    setCancelling(false);
+    if (error) {
+      setCancelError(error.message || t.cancelDealError);
+      return;
+    }
+    setDeal((prev) => ({ ...prev, status: "cancelled" }));
+    setConfirmingCancel(false);
   }
 
   return (
@@ -197,38 +239,74 @@ export default function JobsDetailView({
           </div>
 
           {isOwner && deal.status === "open" && (
-            <div className="mt-4 border-t border-gold-500/10 pt-4">
-              {confirmingComplete ? (
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <span className="text-slate-400">
-                    {t.completeDealConfirmText}
-                  </span>
+            <div className="mt-4 flex flex-col gap-3 border-t border-gold-500/10 pt-4">
+              <div>
+                {confirmingComplete ? (
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="text-slate-400">
+                      {t.completeDealConfirmText}
+                    </span>
+                    <button
+                      onClick={handleComplete}
+                      disabled={completing}
+                      className="rounded-md bg-gold-500 px-3 py-1.5 text-xs font-semibold text-navy-950 disabled:opacity-50"
+                    >
+                      {completing ? t.submitting : t.completeDealConfirmYes}
+                    </button>
+                    <button
+                      onClick={() => setConfirmingComplete(false)}
+                      disabled={completing}
+                      className="text-xs text-slate-400 underline"
+                    >
+                      {t.cancelButton}
+                    </button>
+                  </div>
+                ) : (
                   <button
-                    onClick={handleComplete}
-                    disabled={completing}
-                    className="rounded-md bg-gold-500 px-3 py-1.5 text-xs font-semibold text-navy-950 disabled:opacity-50"
+                    onClick={() => setConfirmingComplete(true)}
+                    className="rounded-md border border-gold-500/30 px-3 py-1.5 text-sm font-medium text-gold-400 hover:border-gold-400"
                   >
-                    {completing ? t.submitting : t.completeDealConfirmYes}
+                    {t.completeDealButton}
                   </button>
+                )}
+                {completeError && (
+                  <p className="mt-2 text-sm text-red-400">{completeError}</p>
+                )}
+              </div>
+
+              <div>
+                {confirmingCancel ? (
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="text-slate-400">
+                      {t.cancelDealConfirmText}
+                    </span>
+                    <button
+                      onClick={handleCancel}
+                      disabled={cancelling}
+                      className="rounded-md bg-red-500/90 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                    >
+                      {cancelling ? t.submitting : t.cancelDealConfirmYes}
+                    </button>
+                    <button
+                      onClick={() => setConfirmingCancel(false)}
+                      disabled={cancelling}
+                      className="text-xs text-slate-400 underline"
+                    >
+                      {t.cancelButton}
+                    </button>
+                  </div>
+                ) : (
                   <button
-                    onClick={() => setConfirmingComplete(false)}
-                    disabled={completing}
-                    className="text-xs text-slate-400 underline"
+                    onClick={() => setConfirmingCancel(true)}
+                    className="rounded-md border border-red-500/40 px-3 py-1.5 text-sm font-medium text-red-400 hover:border-red-400"
                   >
-                    {t.cancelButton}
+                    {t.cancelDealButton}
                   </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setConfirmingComplete(true)}
-                  className="rounded-md border border-gold-500/30 px-3 py-1.5 text-sm font-medium text-gold-400 hover:border-gold-400"
-                >
-                  {t.completeDealButton}
-                </button>
-              )}
-              {completeError && (
-                <p className="mt-2 text-sm text-red-400">{completeError}</p>
-              )}
+                )}
+                {cancelError && (
+                  <p className="mt-2 text-sm text-red-400">{cancelError}</p>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -273,13 +351,26 @@ export default function JobsDetailView({
                     </p>
 
                     {isOwner && deal.status === "open" && reply.status === "pending" && (
-                      <button
-                        onClick={() => handleAccept(reply.id)}
-                        disabled={acceptingId === reply.id}
-                        className="mt-3 rounded-md bg-gold-500 px-3 py-1.5 text-xs font-semibold text-navy-950 disabled:opacity-50"
-                      >
-                        {t.acceptButton}
-                      </button>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() => handleAccept(reply.id)}
+                          disabled={
+                            acceptingId === reply.id || rejectingId === reply.id
+                          }
+                          className="rounded-md bg-gold-500 px-3 py-1.5 text-xs font-semibold text-navy-950 disabled:opacity-50"
+                        >
+                          {t.acceptButton}
+                        </button>
+                        <button
+                          onClick={() => handleReject(reply.id)}
+                          disabled={
+                            acceptingId === reply.id || rejectingId === reply.id
+                          }
+                          className="rounded-md border border-slate-500/30 px-3 py-1.5 text-xs font-medium text-slate-400 hover:border-slate-400 hover:text-slate-300 disabled:opacity-50"
+                        >
+                          {t.rejectButton}
+                        </button>
+                      </div>
                     )}
 
                     {reply.status === "accepted" &&
@@ -328,6 +419,7 @@ export default function JobsDetailView({
               })
             )}
             {acceptError && <p className="text-sm text-red-400">{acceptError}</p>}
+            {rejectError && <p className="text-sm text-red-400">{rejectError}</p>}
           </div>
         </section>
 
