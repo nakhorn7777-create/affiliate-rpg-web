@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,3 +24,26 @@ jobs:
       - run: npx eslint .
       - run: npm run test
       - run: npm run build
+
+  # Runs against a dedicated test Supabase project — never production.
+  # Only on PRs targeting main (or manual dispatch), to conserve the
+  # test project's free-tier connection limits during normal push cycles.
+  # Deliberately independent of the `build` job (no `needs:`) so it runs
+  # in parallel and never blocks the fast unit-test/build feedback loop.
+  integration-tests:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      TEST_SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+      TEST_SUPABASE_ANON_KEY: ${{ secrets.TEST_SUPABASE_ANON_KEY }}
+      TEST_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TEST_SUPABASE_SERVICE_ROLE_KEY }}
+      TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx supabase db push --db-url "$TEST_DATABASE_URL"
+      - run: npx vitest run --config vitest.integration.config.ts
