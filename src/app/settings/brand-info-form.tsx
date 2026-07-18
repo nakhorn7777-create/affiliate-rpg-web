@@ -6,16 +6,17 @@ import { useLang } from "@/lib/lang/use-lang";
 import { appTranslations } from "@/lib/lang/app-translations";
 
 export default function BrandInfoForm({
-  profileId,
   initialBrandName,
   initialBrandWebsite,
+  initialBrandStatus,
 }: {
-  profileId: string;
   initialBrandName: string | null;
   initialBrandWebsite: string | null;
+  initialBrandStatus: "pending" | "processing" | "rejected";
 }) {
   const [brandName, setBrandName] = useState(initialBrandName ?? "");
   const [brandWebsite, setBrandWebsite] = useState(initialBrandWebsite ?? "");
+  const [brandStatus, setBrandStatus] = useState(initialBrandStatus);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<
     { type: "success" | "error"; text: string } | null
@@ -29,20 +30,18 @@ export default function BrandInfoForm({
     setMessage(null);
 
     const supabase = createClient();
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        brand_name: brandName || null,
-        brand_website: brandWebsite || null,
-      })
-      .eq("id", profileId);
+    const { error } = await supabase.rpc("resubmit_brand_info", {
+      p_brand_name: brandName || null,
+      p_brand_website: brandWebsite || null,
+    });
 
     setSaving(false);
-    setMessage(
-      error
-        ? { type: "error", text: t.brandInfoError }
-        : { type: "success", text: t.brandInfoSaved }
-    );
+    if (error) {
+      setMessage({ type: "error", text: t.brandInfoError });
+      return;
+    }
+    setBrandStatus("pending");
+    setMessage({ type: "success", text: t.brandInfoSaved });
   }
 
   return (
@@ -50,6 +49,12 @@ export default function BrandInfoForm({
       onSubmit={handleSubmit}
       className="flex flex-col gap-3 border-t border-neutral-200 pt-4"
     >
+      {brandStatus === "rejected" && (
+        <p className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+          {t.brandRejectedWarning}
+        </p>
+      )}
+
       <label className="flex flex-col gap-1 text-sm">
         {t.brandNameLabel}
         <input

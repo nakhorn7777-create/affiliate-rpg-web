@@ -48,6 +48,39 @@ function VerifiedBadge({ label }: { label: string }) {
   );
 }
 
+function BrandStatusIndicator({
+  isOfficialBrand,
+  brandStatus,
+  t,
+}: {
+  isOfficialBrand: boolean;
+  brandStatus: "pending" | "processing" | "rejected";
+  t: JobsT;
+}) {
+  if (brandStatus === "rejected") {
+    return (
+      <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-medium text-red-400">
+        {t.rejectedBrandLabel}
+      </span>
+    );
+  }
+  if (isOfficialBrand) {
+    return <VerifiedBadge label={t.verifiedBrandLabel} />;
+  }
+  if (brandStatus === "processing") {
+    return (
+      <span className="rounded-full bg-slate-500/10 px-2 py-0.5 text-[11px] font-medium text-slate-400">
+        {t.processingBrandLabel}
+      </span>
+    );
+  }
+  return (
+    <span className="rounded-full bg-slate-500/10 px-2 py-0.5 text-[11px] font-medium text-slate-400">
+      {t.pendingBrandLabel}
+    </span>
+  );
+}
+
 function ContactRevealCard({
   contact,
   t,
@@ -152,7 +185,7 @@ export default function JobsDetailView({
     const { data, error } = await supabase
       .from("deal_replies")
       .insert({ deal_id: deal.id, applicant_id: userId, message })
-      .select("*, profiles(username, display_name, avatar_url, is_official_brand)")
+      .select("*, profiles(username, display_name, avatar_url, is_official_brand, brand_status)")
       .single();
 
     setSubmittingReply(false);
@@ -261,8 +294,12 @@ export default function JobsDetailView({
                   {poster?.display_name || poster?.username || "—"} ·{" "}
                   {deal.created_at.slice(0, 10)}
                 </span>
-                {poster?.is_official_brand && (
-                  <VerifiedBadge label={t.verifiedBrandLabel} />
+                {deal.posted_as === "brand" && poster && (
+                  <BrandStatusIndicator
+                    isOfficialBrand={poster.is_official_brand}
+                    brandStatus={poster.brand_status}
+                    t={t}
+                  />
                 )}
               </p>
             </div>

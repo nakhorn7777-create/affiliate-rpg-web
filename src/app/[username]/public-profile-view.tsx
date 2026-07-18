@@ -25,6 +25,7 @@ type Profile = {
   has_brand: boolean;
   brand_name: string | null;
   is_official_brand: boolean;
+  brand_status: "pending" | "processing" | "rejected";
 };
 
 type AffiliateLink = {
@@ -139,13 +140,34 @@ export default function PublicProfileView({
               {profile.display_name || profile.username}
             </h1>
             <p className="text-sm text-white/60">@{profile.username}</p>
-            {profile.has_brand && profile.brand_name && (
+            {profile.has_brand && (
               <p className="mt-1 flex items-center gap-1.5 text-sm text-white/70">
-                <span>
-                  {t.brandLabel}: {profile.brand_name}
-                </span>
-                {profile.is_official_brand && (
-                  <VerifiedBadge label={t.verifiedBrandLabel} />
+                {profile.brand_status === "rejected" ? (
+                  <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-medium text-red-200">
+                    {t.rejectedBrandLabel}
+                  </span>
+                ) : profile.is_official_brand ? (
+                  <>
+                    {profile.brand_name && (
+                      <span>
+                        {t.brandLabel}: {profile.brand_name}
+                      </span>
+                    )}
+                    <VerifiedBadge label={t.verifiedBrandLabel} />
+                  </>
+                ) : (
+                  <>
+                    {profile.brand_name && (
+                      <span>
+                        {t.brandLabel}: {profile.brand_name}
+                      </span>
+                    )}
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-white/70">
+                      {profile.brand_status === "processing"
+                        ? t.processingBrandLabel
+                        : t.pendingBrandLabel}
+                    </span>
+                  </>
                 )}
               </p>
             )}

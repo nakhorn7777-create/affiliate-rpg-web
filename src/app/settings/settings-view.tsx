@@ -22,6 +22,7 @@ type Profile = {
   has_brand: boolean;
   brand_name: string | null;
   brand_website: string | null;
+  brand_status: "pending" | "processing" | "rejected";
 };
 
 type AffiliateLink = {
@@ -108,9 +109,9 @@ export default function SettingsView({
             <BrandModeToggle hasBrand={hasBrand} onToggled={setHasBrand} />
             {hasBrand && profile && (
               <BrandInfoForm
-                profileId={profile.id}
                 initialBrandName={profile.brand_name}
                 initialBrandWebsite={profile.brand_website}
+                initialBrandStatus={profile.brand_status}
               />
             )}
           </div>

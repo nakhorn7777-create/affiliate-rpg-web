@@ -262,7 +262,7 @@ function CreateDealModal({
         slots_total: Number(slots) || 1,
         category,
       })
-      .select("*, profiles(username, display_name, avatar_url, is_official_brand)")
+      .select("*, profiles(username, display_name, avatar_url, is_official_brand, brand_status)")
       .single();
 
     setSaving(false);

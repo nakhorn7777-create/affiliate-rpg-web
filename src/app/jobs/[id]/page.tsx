@@ -15,12 +15,12 @@ export default async function JobDetailPage({
     await Promise.all([
       supabase
         .from("brand_deals")
-        .select("*, profiles(username, display_name, avatar_url, is_official_brand)")
+        .select("*, profiles(username, display_name, avatar_url, is_official_brand, brand_status)")
         .eq("id", id)
         .maybeSingle(),
       supabase
         .from("deal_replies")
-        .select("*, profiles(username, display_name, avatar_url, is_official_brand)")
+        .select("*, profiles(username, display_name, avatar_url, is_official_brand, brand_status)")
         .eq("deal_id", id)
         .order("created_at", { ascending: true }),
       supabase.from("deal_reviews").select("*").eq("deal_id", id),
