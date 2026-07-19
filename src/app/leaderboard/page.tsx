@@ -5,7 +5,8 @@ export default async function LeaderboardPage() {
   const supabase = await createClient();
 
   // TODO: cast is a contained escape hatch until database.types.ts is
-  // regenerated to include get_leaderboard (added in migration 0014).
+  // regenerated to include get_leaderboard (added in 0014, signature
+  // changed in 0015 — currency_value column, "season" timeframe).
   const { data } = await supabase.rpc("get_leaderboard" as never, {
     p_timeframe: "daily",
   } as never);

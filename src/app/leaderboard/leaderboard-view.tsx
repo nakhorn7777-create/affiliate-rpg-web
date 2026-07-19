@@ -5,20 +5,21 @@ import { createClient } from "@/lib/supabase/client";
 import { useLang } from "@/lib/lang/use-lang";
 import { appTranslations } from "@/lib/lang/app-translations";
 
-export type Timeframe = "daily" | "weekly" | "monthly";
+export type Timeframe = "daily" | "weekly" | "monthly" | "season";
 
 export type LeaderboardEntry = {
   user_id: string;
   username: string;
   display_name: string | null;
   avatar_url: string | null;
-  currency_gained: number;
+  currency_value: number;
 };
 
-// TODO: get_leaderboard is defined in migration 0014 but database.types.ts
-// hasn't been regenerated since — the `as never` casts below are a
-// contained escape hatch until `supabase gen types typescript` is re-run.
-// Remove them at that point; everything else here is fully typed.
+// TODO: get_leaderboard is defined in migration 0014/0015 but
+// database.types.ts hasn't been regenerated since — the `as never`
+// casts below are a contained escape hatch until
+// `supabase gen types typescript` is re-run. Remove them at that point;
+// everything else here is fully typed.
 async function fetchLeaderboard(
   supabase: ReturnType<typeof createClient>,
   timeframe: Timeframe
@@ -68,6 +69,7 @@ export default function LeaderboardView({
     { key: "daily", label: t.tabDaily },
     { key: "weekly", label: t.tabWeekly },
     { key: "monthly", label: t.tabMonthly },
+    { key: "season", label: t.tabSeason },
   ];
 
   async function handleTabChange(next: Timeframe) {
@@ -152,7 +154,8 @@ export default function LeaderboardView({
                     </p>
                   </div>
                   <span className="shrink-0 text-base font-semibold text-gold-400">
-                    +{entry.currency_gained.toLocaleString()}{" "}
+                    {timeframe === "season" ? "" : "+"}
+                    {entry.currency_value.toLocaleString()}{" "}
                     <span className="text-xs font-normal text-slate-400">
                       {t.currencySuffix}
                     </span>
