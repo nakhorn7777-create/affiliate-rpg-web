@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useLang } from "@/lib/lang/use-lang";
 import { appTranslations } from "@/lib/lang/app-translations";
@@ -18,6 +18,7 @@ export default function GlobalNav({ user }: { user: NavUser }) {
   const [langExpanded, setLangExpanded] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = createClient();
   const [lang, setLang] = useLang();
   const t = appTranslations[lang].nav;
@@ -58,17 +59,43 @@ export default function GlobalNav({ user }: { user: NavUser }) {
   const menuItemClass =
     "block w-full rounded-lg px-3 py-2 text-left text-sm text-ivory-100 transition hover:bg-navy-900/70 hover:text-gold-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400";
 
+  const moduleLinks = [
+    { href: "/academy", label: t.academy },
+    { href: "/jobs", label: t.jobBoard },
+    { href: "/leaderboard", label: t.leaderboard },
+  ];
+
+  function moduleLinkClass(href: string) {
+    const active = pathname === href || pathname?.startsWith(`${href}/`);
+    return `whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400 ${
+      active
+        ? "text-gold-400"
+        : "text-ivory-100/80 hover:text-gold-400"
+    }`;
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b border-gold-500/15 bg-navy-950/85 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
         <Link
           href={`/${user.username}`}
-          className="text-sm font-semibold tracking-wide text-gold-400"
+          className="shrink-0 text-sm font-semibold tracking-wide text-gold-400"
         >
           AffiliateRPG
         </Link>
 
-        <div className="relative" ref={menuRef}>
+        <nav
+          aria-label={t.mainNavLabel}
+          className="flex flex-1 items-center gap-1 overflow-x-auto sm:justify-end"
+        >
+          {moduleLinks.map((link) => (
+            <Link key={link.href} href={link.href} className={moduleLinkClass(link.href)}>
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="relative shrink-0" ref={menuRef}>
           <button
             onClick={() => setOpen((v) => !v)}
             aria-haspopup="menu"
@@ -106,14 +133,6 @@ export default function GlobalNav({ user }: { user: NavUser }) {
               {t.viewProfile}
             </Link>
             <Link
-              href="/academy"
-              role="menuitem"
-              onClick={closeMenu}
-              className={menuItemClass}
-            >
-              {t.academy}
-            </Link>
-            <Link
               href="/stats"
               role="menuitem"
               onClick={closeMenu}
@@ -128,14 +147,6 @@ export default function GlobalNav({ user }: { user: NavUser }) {
               className={menuItemClass}
             >
               {t.insights}
-            </Link>
-            <Link
-              href="/jobs"
-              role="menuitem"
-              onClick={closeMenu}
-              className={menuItemClass}
-            >
-              {t.jobBoard}
             </Link>
             <Link
               href="/settings"
