@@ -15,21 +15,11 @@ export type LeaderboardEntry = {
   currency_value: number;
 };
 
-// TODO: get_leaderboard is defined in migration 0014/0015 but
-// database.types.ts hasn't been regenerated since — the `as never`
-// casts below are a contained escape hatch until
-// `supabase gen types typescript` is re-run. Remove them at that point;
-// everything else here is fully typed.
 async function fetchLeaderboard(
   supabase: ReturnType<typeof createClient>,
   timeframe: Timeframe
 ) {
-  return supabase.rpc("get_leaderboard" as never, {
-    p_timeframe: timeframe,
-  } as never) as unknown as Promise<{
-    data: LeaderboardEntry[] | null;
-    error: { message: string } | null;
-  }>;
+  return supabase.rpc("get_leaderboard", { p_timeframe: timeframe });
 }
 
 function RankBadge({ rank }: { rank: number }) {

@@ -97,6 +97,51 @@ export type Database = {
           },
         ]
       }
+      admin_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          target_profile_id: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          target_profile_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          target_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_audit_logs_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_audit_logs_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       affiliate_links: {
         Row: {
           click_count: number
@@ -630,6 +675,48 @@ export type Database = {
           },
         ]
       }
+      leaderboard_snapshots: {
+        Row: {
+          created_at: string
+          currency: number
+          id: string
+          season_id: string
+          snapshot_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency: number
+          id?: string
+          season_id: string
+          snapshot_date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: number
+          id?: string
+          season_id?: string
+          snapshot_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_snapshots_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaderboard_snapshots_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketplace_listings: {
         Row: {
           created_at: string
@@ -1087,6 +1174,35 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_hits: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_limit_hits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       season_notifications_log: {
         Row: {
           id: string
@@ -1422,6 +1538,7 @@ export type Database = {
       }
       auto_end_expired_seasons: { Args: never; Returns: undefined }
       cancel_brand_deal: { Args: { p_deal_id: string }; Returns: undefined }
+      capture_leaderboard_snapshot: { Args: never; Returns: undefined }
       check_and_claim_academy_quests: {
         Args: never
         Returns: {
@@ -1444,6 +1561,20 @@ export type Database = {
         Returns: undefined
       }
       end_season: { Args: { p_season_id: string }; Returns: undefined }
+      enforce_rate_limit: {
+        Args: { p_action: string; p_max_count: number; p_window: string }
+        Returns: undefined
+      }
+      get_leaderboard: {
+        Args: { p_timeframe: string }
+        Returns: {
+          avatar_url: string
+          currency_value: number
+          display_name: string
+          user_id: string
+          username: string
+        }[]
+      }
       get_login_stats: {
         Args: never
         Returns: {
