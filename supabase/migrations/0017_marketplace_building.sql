@@ -26,12 +26,12 @@
 -- ทุก migration ก่อนหน้านี้นิยามแค่โครงตาราง master data ไม่เคย seed)
 -- ================================================================
 
-insert into public.game_items (item_key, name, item_type, tier, is_tradeable) values
-  ('wood', 'ไม้', 'resource', 1, true),
-  ('stone', 'หิน', 'resource', 1, true),
-  ('clay', 'ดิน', 'resource', 1, true),
-  ('water', 'น้ำ', 'resource', 1, true),
-  ('provisions', 'เสบียง', 'resource', 1, true)
+insert into public.game_items (item_key, name, item_type, is_tradeable) values
+  ('wood', 'ไม้', 'resource', true),
+  ('stone', 'หิน', 'resource', true),
+  ('clay', 'ดิน', 'resource', true),
+  ('water', 'น้ำ', 'resource', true),
+  ('provisions', 'เสบียง', 'resource', true)
 on conflict (item_key) do nothing;
 
 alter table public.game_items
@@ -41,9 +41,9 @@ alter table public.game_items
 comment on column public.game_items.market_category is
   'แยก T2 crafted goods ตาม blueprint 2026-07-22: hero_equipment เทรดผ่าน 5A (token, instant), building_material เทรดผ่าน 5B (barter, merchant cart) — null สำหรับ T1 raw resource (ไปทาง sell_to_npc หรือ 5B เท่านั้น ไม่ผ่าน 5A)';
 
-insert into public.game_items (item_key, name, item_type, tier, market_category, is_tradeable) values
-  ('processed_lumber', 'ไม้แปรรูป', 'crafted', 2, 'building_material', true),
-  ('bricks', 'อิฐ', 'crafted', 2, 'building_material', true)
+insert into public.game_items (item_key, name, item_type, market_category, is_tradeable) values
+  ('processed_lumber', 'ไม้แปรรูป', 'crafted', 'building_material', true),
+  ('bricks', 'อิฐ', 'crafted', 'building_material', true)
 on conflict (item_key) do nothing;
 
 -- ----------------------------------------------------------------
